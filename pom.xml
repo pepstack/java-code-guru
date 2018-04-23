@@ -5,10 +5,10 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <description>pepstack-java-util is a java bundle of utility classes.</description>
+    <description>pepstack-java-guru is a java bundle of utility classes.</description>
 
-    <groupId>com.pepstack.util</groupId>
-    <artifactId>pepstack-java-util</artifactId>
+    <groupId>com.pepstack.guru</groupId>
+    <artifactId>pepstack-java-guru</artifactId>
     <version>1.0.0-PRE</version>
     <packaging>jar</packaging>
 
@@ -48,6 +48,23 @@
             <version>1.1.2</version>
         </dependency>
 
+        <!-- net.sf.json.JSONObject
+          https://mvnrepository.com/artifact/com.github.servanter/netsfjson-support-spring
+        -->
+        <dependency>
+            <groupId>com.github.servanter</groupId>
+            <artifactId>netsfjson-support-spring</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        
+        <!-- eu.bitwalker.useragentutils.UserAgent
+          https://mvnrepository.com/artifact/eu.bitwalker/UserAgentUtils
+        -->
+        <dependency>
+            <groupId>eu.bitwalker</groupId>
+            <artifactId>UserAgentUtils</artifactId>
+            <version>1.21</version>
+        </dependency>
     </dependencies>
 
     <build>

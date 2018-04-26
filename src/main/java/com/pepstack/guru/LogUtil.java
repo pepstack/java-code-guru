@@ -41,7 +41,7 @@ public class LogUtil {
 
     // cyan
     private final static String DEBUG_COLOR_FORMAT = "\033[36m%s\033[0m";
- 
+
     public final void testLogging() {
         trace(logger, "This is a trace message!");
         debug(logger, "This is a debug message!");

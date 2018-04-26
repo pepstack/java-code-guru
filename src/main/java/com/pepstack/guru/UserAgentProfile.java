@@ -24,7 +24,7 @@ package com.pepstack.guru;
 // source:
 //   https://github.com/HaraldWalker/user-agent-utils
 
-// ²âÊÔä¯ÀÀÆ÷ User-Agent:
+// æµ‹è¯•æµè§ˆå™¨ User-Agent:
 //   http://www.useragentstring.com/index.php
 //   https://blog.csdn.net/java_faep/article/details/73838915
 
@@ -74,10 +74,10 @@ import eu.bitwalker.useragentutils.OperatingSystem;
 public final class UserAgentProfile {
     private final static int API_TIMEOUT_MILLISECONDS = 2000;
 
-    // ÌÔ±¦ API
+    // æ·˜å® API
     private final static String TAOBAO_API_URL = "http://ip.taobao.com/service/getIpInfo.php";
     
-    // ĞÂÀË API
+    // æ–°æµª API
 	private final static String SINA_API_URL = "http://int.dpool.sina.com.cn/iplookup/iplookup.php";
 
     private final static String USER_LOCATION_FORMAT = "{country(%s);region(%s);city(%s);county(%s);isp(%s);area(%s);}";
@@ -109,13 +109,13 @@ public final class UserAgentProfile {
 
 
     /**
-	 * »ñÈ¡ÓÃ»§¶ËµÄÕæÊµ IP µØÖ·
+	 * è·å–ç”¨æˆ·ç«¯çš„çœŸå® IP åœ°å€
 	 */
 	public static String getRemoteRealIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
 
         if (! StringUtils.isEmpty(ip) && ! "unknown".equalsIgnoreCase(ip)) {
-            // ¶à´Î·´Ïò´úÀíºó»áÓĞ¶à¸öipÖµ, µÚ1¸öipÊÇÕæÊµip
+            // å¤šæ¬¡åå‘ä»£ç†åä¼šæœ‰å¤šä¸ªipå€¼, ç¬¬1ä¸ªipæ˜¯çœŸå®ip
             int index = ip.indexOf(",");
 
             if(index != -1) {

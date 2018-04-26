@@ -37,7 +37,7 @@ public class JsonResult<T> {
     public final static int STATUS_NOTIMPL = -2;
     public final static int STATUS_INVALIDARG = -3;
     public final static int STATUS_UNEXPECTED = -4;
-    
+
     public final static String ERROR_ERROR = "ERROR";
     public final static String ERROR_NOTIMPL = "E_NOTIMPL";
     public final static String ERROR_INVALIDARG = "E_INVALIDARG";
@@ -70,12 +70,12 @@ public class JsonResult<T> {
 
         if (map.containsKey(key)) {
             Object value = map.get(key);
-            
+
             if (value == null) {
                 return defValueIfNull;
             } else {
                 return value.toString();
-            }        
+            }
         } else {
             return defValueIfNull;
         }
@@ -106,7 +106,7 @@ public class JsonResult<T> {
     public void setError(String error) {
         this.error = error;
     }
-    
+
 
     public String getMessage() {
         return message;

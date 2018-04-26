@@ -134,7 +134,7 @@ public class RC4 {
         return ret;
     }
 
-    
+
     private static byte uniteBytes(byte src0, byte src1) {
         char _b0 = (char)Byte.decode("0x" + new String(new byte[] { src0 })).byteValue();
 
@@ -147,7 +147,7 @@ public class RC4 {
         return ret;
     }
 
-    
+
     private static byte[] RC4Base (byte [] input, String mKkey) {
         int x = 0;
         int y = 0;

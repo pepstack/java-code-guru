@@ -45,7 +45,7 @@ public final class AccountValidator {
     private static final Pattern USERNAME_PATTERN =
         Pattern.compile("^(?=.{3,20}$)(?![0-9-_.])(?!.*[-_.]{2})[a-zA-Z0-9-._]+(?<![-_.])$", Pattern.CASE_INSENSITIVE);
 
-        
+
     /**
      * Validate username with regular expression
      * @param username username for validation

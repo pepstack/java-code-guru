@@ -67,6 +67,16 @@
             <artifactId>UserAgentUtils</artifactId>
             <version>1.21</version>
         </dependency>
+        
+        <!-- org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+          https://mvnrepository.com/artifact/org.springframework.security/spring-security-crypto
+        -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+            <version>5.0.4.RELEASE</version>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -20,78 +20,39 @@
 ***********************************************************************/
 package com.pepstack.guru;
 
-/**
- * JsonResult.java
- *
- */
-
 import java.util.Date;
 import java.util.Map;
 
 
 public class JsonResult<T> {
-    public final static int STATUS_SUCCESS = 0;
-    public final static String ERROR_SUCCESS = "SUCCESS";
+    public final static int RESULT_STATUS_SUCCESS = 0;
+    public final static int RESULT_STATUS_ERROR = -1;
 
-    public final static int STATUS_ERROR = -1;
-    public final static int STATUS_NOTIMPL = -2;
-    public final static int STATUS_INVALIDARG = -3;
-    public final static int STATUS_UNEXPECTED = -4;
+    public final static String RESULT_STATUS_SUCCESS_MSG = "SUCCESS";
+    public final static String RESULT_STATUS_ERROR_MSG = "ERROR";
 
-    public final static String ERROR_ERROR = "ERROR";
-    public final static String ERROR_NOTIMPL = "E_NOTIMPL";
-    public final static String ERROR_INVALIDARG = "E_INVALIDARG";
-    public final static String ERROR_UNEXPECTED = "E_UNEXPECTED";
+
+    // RESTful 请求路径
+    private final String path;
+    public String getPath() {
+        return path;
+    }
 
 
     // 毫秒为单位的时间戳
-    private final Long timestamp = (new Date()).getTime();
-
-    private final String path;
-
-    private int status = STATUS_SUCCESS;
-
-    private String error = ERROR_SUCCESS;
-
-    private String message = "";
-
-    private T result = null;
+    private final long timestamp = (new Date()).getTime();
+    public long getTimestamp() {
+        return timestamp;
+    }
 
 
     public JsonResult(String path) {
         this.path = path;
     }
 
-
-    public static String mapGetValueString(Map<String, Object> map, String key, String defValueIfNull) {
-        if (map == null) {
-            return defValueIfNull;
-        }
-
-        if (map.containsKey(key)) {
-            Object value = map.get(key);
-
-            if (value == null) {
-                return defValueIfNull;
-            } else {
-                return value.toString();
-            }
-        } else {
-            return defValueIfNull;
-        }
-    }
-
-
-    public String getPath() {
-        return path;
-    }
-
-
-    public Long getTimestamp() {
-        return timestamp;
-    }
-
-
+    
+    // 状态码: 0 成功
+    private int status = RESULT_STATUS_SUCCESS;
     public int getStatus() {
         return status;
     }
@@ -100,6 +61,8 @@ public class JsonResult<T> {
     }
 
 
+    // 状态值
+    private String error = RESULT_STATUS_SUCCESS_MSG;
     public String getError() {
         return error;
     }
@@ -108,6 +71,7 @@ public class JsonResult<T> {
     }
 
 
+    private String message = "";
     public String getMessage() {
         return message;
     }
@@ -116,6 +80,7 @@ public class JsonResult<T> {
     }
 
 
+    private T result = null;
     public T getResult() {
         return result;
     }
@@ -124,20 +89,48 @@ public class JsonResult<T> {
     }
 
 
-    public JsonResult<T> setStatusError(int status, String error) {
-        setStatus(status);
-        setError(error);
+    public JsonResult<T> updateResult(T result) {
+        this.result = result;
         return this;
     }
 
 
-    public JsonResult<T> setResultStatus(T result, int statusIfNull, String errorIfNull) {
-        setResult(result);
+    public JsonResult<T> updateStatusError(int status, String error) {
+        this.setStatus(status);
+        this.setError(error);
+        return this;
+    }
 
-        if (this.result == null) {
-            setStatusError(statusIfNull, errorIfNull);
+
+    public JsonResult<T> updateStatusError(int status, String error, String message) {
+        this.setStatus(status);
+        this.setError(error);
+        this.setMessage(message);
+        return this;
+    }
+
+
+    // 从 map 中取得值, 不抛出异常
+    public static String mapGetValue(Map<String, Object> map, String key, String defValueIfNull) {
+        try {
+            if (map == null) {
+                return defValueIfNull;
+            }
+
+            if (map.containsKey(key)) {
+                Object value = map.get(key);
+
+                if (value == null) {
+                    return defValueIfNull;
+                } else {
+                    return value.toString();
+                }
+            } else {
+                return defValueIfNull;
+            }
+        } catch (Exception ex) {
         }
 
-        return this;
+        return defValueIfNull;
     }
 }

@@ -21,6 +21,11 @@
 package com.pepstack.guru;
 
 
+import java.util.Date;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -151,7 +156,7 @@ public final class JsonBeanUtil {
             "        'loginCount':3"+
             "    }"+
             "}";
-
+    
         Map<String, AgentDevice> deviceMap = JsonMapToBeanMap(jsonMapString, AgentDevice.class);
 
         JSONObject jsonObject = JSONObject.fromObject(deviceMap);
@@ -173,7 +178,7 @@ public final class JsonBeanUtil {
 
             // value is a map string
             value = jsonObjMapColl.getString(key);
-
+            
             JSONObject jsonObj = JSONObject.fromObject(value);
 
             Map<String, Object> valueMap = JsonBeanUtil.JsonToMap(jsonObj);

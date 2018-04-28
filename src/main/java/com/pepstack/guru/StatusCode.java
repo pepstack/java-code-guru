@@ -27,7 +27,7 @@ package com.pepstack.guru;
 public class StatusCode {
     // 成功
     public final static int STATUS_SUCCESS = 0;
-    
+
     // 无错误
     public final static int STATUS_NOERROR = 0;
 
@@ -122,7 +122,7 @@ public class StatusCode {
     // APPSECRET 错误
     public final static int STATUS_ERROR_APPSECRET = -32;
 
-    
+
     // 用户名或密码不正确
     public final static int STATUS_ERROR_USERNAME_OR_PASSWORD = -40;
 
@@ -141,7 +141,7 @@ public class StatusCode {
 
     // 发送短信验证码错误
     public final static int STATUS_ERROR_SEND_SMSCODE = -51;
-    
+
     // 短信验证码已经过期
     public final static int STATUS_SMSCODE_IS_EXPIRED = -52;
 

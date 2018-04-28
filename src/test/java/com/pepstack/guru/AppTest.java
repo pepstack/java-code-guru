@@ -62,14 +62,14 @@ public class AppTest extends TestCase {
         assertFalse("Username not mixed with __", AccountValidator.validateUsername("Jhon._BigBug"));
         assertFalse("Username not mixed with _.", AccountValidator.validateUsername("Jhon_.BigBug"));
         assertFalse("Username not mixed with _.", AccountValidator.validateUsername("Jhon._BigBug"));
-        
+
         assertFalse("Username not start with -", AccountValidator.validateUsername("-Tom"));
         assertFalse("Username not start with _", AccountValidator.validateUsername("_Tom"));
         assertFalse("Username not start with .", AccountValidator.validateUsername(".Tom"));
-        
+
         assertFalse("Username not start with number", AccountValidator.validateUsername("007Band"));
         assertFalse("Username not start with number", AccountValidator.validateUsername("007 Band"));
-        
+
         assertTrue("Username start with character", AccountValidator.validateUsername("Band007"));
         assertTrue("Username start with character", AccountValidator.validateUsername("Band007x"));
         assertTrue("Username start with character", AccountValidator.validateUsername("Band-007"));
@@ -94,7 +94,7 @@ public class AppTest extends TestCase {
         assertFalse("Username illegal characters", AccountValidator.validateUsername("tom^usa"));
         assertFalse("Username illegal characters", AccountValidator.validateUsername("tom@usa"));
         assertFalse("Username illegal characters", AccountValidator.validateUsername("tom%usa"));
-        
+
         assertFalse("Username cannot using unicode chars", AccountValidator.validateUsername("tom张"));
         assertFalse("Username cannot using unicode chars", AccountValidator.validateUsername("张3"));
 
@@ -103,7 +103,7 @@ public class AppTest extends TestCase {
         assertTrue("Username qualified", AccountValidator.validateUsername("zhang-123"));
         assertTrue("Username qualified", AccountValidator.validateUsername("zhang_123"));
         assertTrue("Username qualified", AccountValidator.validateUsername("zhang_1.2.3"));
-   
+
         assertEquals("ERROR_PASSWORD_IS_NULL", AccountValidator.validatePassword(null), AccountValidator.ERROR_PASSWORD_IS_NULL);
         assertEquals("ERROR_PASSWORD_TOO_SHORT", AccountValidator.validatePassword("A2b4#"), AccountValidator.ERROR_PASSWORD_TOO_SHORT);
         assertEquals("ERROR_PASSWORD_TOO_LONG", AccountValidator.validatePassword("A2b4#12345678900987654321abcde890"), AccountValidator.ERROR_PASSWORD_TOO_LONG);
@@ -114,7 +114,7 @@ public class AppTest extends TestCase {
         assertEquals("ERROR_PASSWORD_REPEAT_SETS", AccountValidator.validatePassword("Abc123Abc123#"), AccountValidator.ERROR_PASSWORD_REPEAT_SETS);
         assertEquals("ERROR_PASSWORD_HAS_WHITESPACE", AccountValidator.validatePassword("Abc 123Th#$"), AccountValidator.ERROR_PASSWORD_HAS_WHITESPACE);
         assertEquals("SUCCESS_PASSWORD_STRENGTH_OK", AccountValidator.validatePassword("Abc123Th#$"), AccountValidator.SUCCESS_PASSWORD_STRENGTH_OK);
-   
+
         assertTrue(AccountValidator.validateEmail("350137278@qq.com"));
         assertTrue(AccountValidator.validateEmail("cheungmine@gmail.com"));
         assertTrue(AccountValidator.validateEmail("cheungmine@163.net"));
@@ -122,14 +122,14 @@ public class AppTest extends TestCase {
         assertFalse(AccountValidator.validateEmail("350137278qq.com"));
         assertFalse(AccountValidator.validateEmail("cheungmine@gmail"));
         assertFalse(AccountValidator.validateEmail("cheungmine@ 163.net"));
-   
+
         assertTrue(PhoneValidator.isPhone("13800138000"));
         assertTrue(PhoneValidator.isPhone("13800138001"));
 
         assertFalse(PhoneValidator.isPhone("1380013800"));
         assertFalse(PhoneValidator.isPhone("138001380 0"));
         assertFalse(PhoneValidator.isPhone(" 1380013800"));
-        
+
         assertFalse(PhoneValidator.isPhone("99899799789"));
     }
 }

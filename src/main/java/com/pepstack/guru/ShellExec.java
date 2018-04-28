@@ -57,7 +57,7 @@ public final class ShellExec {
      * @return
      *
      * @throws IOException
-     * 
+     *
      * 注: 如果sh中含有awk, 一定要按 new String[]{"/bin/sh", "-c", shCmdStr}, 才可以获得流.
      */
     public static  List<String> runShell(String shCmdStr) throws Exception {

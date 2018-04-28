@@ -76,9 +76,9 @@ public final class UserAgentProfile {
 
     // 淘宝 API
     private final static String TAOBAO_API_URL = "http://ip.taobao.com/service/getIpInfo.php";
-    
+
     // 新浪 API
-	private final static String SINA_API_URL = "http://int.dpool.sina.com.cn/iplookup/iplookup.php";
+    private final static String SINA_API_URL = "http://int.dpool.sina.com.cn/iplookup/iplookup.php";
 
     private final static String USER_LOCATION_FORMAT = "{country(%s);region(%s);city(%s);county(%s);isp(%s);area(%s);}";
 
@@ -109,9 +109,9 @@ public final class UserAgentProfile {
 
 
     /**
-	 * 获取用户端的真实 IP 地址
-	 */
-	public static String getRemoteRealIp(HttpServletRequest request) {
+     * 获取用户端的真实 IP 地址
+     */
+    public static String getRemoteRealIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
 
         if (! StringUtils.isEmpty(ip) && ! "unknown".equalsIgnoreCase(ip)) {
@@ -139,36 +139,36 @@ public final class UserAgentProfile {
         HttpURLConnection urlConn = null;
         String resultString = null;
 
-        try {   
+        try {
             URL url = new URL(TAOBAO_API_URL);
 
-			urlConn = (HttpURLConnection) url.openConnection();
+            urlConn = (HttpURLConnection) url.openConnection();
 
-			urlConn.setConnectTimeout(API_TIMEOUT_MILLISECONDS);
-			urlConn.setReadTimeout(API_TIMEOUT_MILLISECONDS);
-			urlConn.setDoOutput(true);
-			urlConn.setDoInput(true);
-			urlConn.setRequestMethod("POST");
-			urlConn.setUseCaches(false);
+            urlConn.setConnectTimeout(API_TIMEOUT_MILLISECONDS);
+            urlConn.setReadTimeout(API_TIMEOUT_MILLISECONDS);
+            urlConn.setDoOutput(true);
+            urlConn.setDoInput(true);
+            urlConn.setRequestMethod("POST");
+            urlConn.setUseCaches(false);
 
             urlConn.connect();
 
-			DataOutputStream out = new DataOutputStream(urlConn.getOutputStream());
-			out.writeBytes(String.format("ip=%s", realIp));
-			out.flush();
-			out.close();
+            DataOutputStream out = new DataOutputStream(urlConn.getOutputStream());
+            out.writeBytes(String.format("ip=%s", realIp));
+            out.flush();
+            out.close();
 
             String line;
 
             StringBuffer buffer = new StringBuffer();
-			BufferedReader reader = new BufferedReader(
+            BufferedReader reader = new BufferedReader(
                 new InputStreamReader(urlConn.getInputStream(), "utf-8"));
-			
-			while ((line = reader.readLine()) != null) {
-				buffer.append(line);
-			}
 
-			reader.close();
+            while ((line = reader.readLine()) != null) {
+                buffer.append(line);
+            }
+
+            reader.close();
 
             urlConn.disconnect();
             urlConn = null;
@@ -189,10 +189,10 @@ public final class UserAgentProfile {
         } catch (MalformedURLException mue) {
         } catch (IOException ioe) {
         } finally {
-			if (urlConn != null) {
-				urlConn.disconnect();
-			}
-		}
+            if (urlConn != null) {
+                urlConn.disconnect();
+            }
+        }
 
         if (resultString == null) {
             resultString = "{}";

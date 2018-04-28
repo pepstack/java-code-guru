@@ -50,7 +50,7 @@ public class JsonResult<T> {
         this.path = path;
     }
 
-    
+
     // 状态码: 0 成功
     private int status = RESULT_STATUS_SUCCESS;
     public int getStatus() {

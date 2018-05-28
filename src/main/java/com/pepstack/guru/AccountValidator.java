@@ -18,6 +18,16 @@
 *
 * 3. This notice may not be removed or altered from any source distribution.
 ***********************************************************************/
+/**
+ * @file: AccountValidator.java
+ *
+ *
+ * @author: master@pepstack.com
+ *
+ * @create: 2018-05-04
+ *
+ * @update: 2018-05-28 22:52:17
+ */
 package com.pepstack.guru;
 
 // https://stackoverflow.com/questions/12018245/regular-expression-to-validate-username

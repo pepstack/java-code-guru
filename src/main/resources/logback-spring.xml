@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="true" scan="true" scanPeriod="600 seconds">
+    <!-- How to logging:
+      https://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html
+      https://logback.qos.ch/
+    -->
+
+    <!-- DONOT use 'base.xml':
+      <include resource="org/springframework/boot/logging/logback/base.xml"/>
+      <include resource="org/springframework/boot/logging/logback/file-appender.xml" />
+    -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+
+    <appender name="StdoutConsole" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <charset>UTF-8</charset>
+            <outputPatternAsHeader>true</outputPatternAsHeader>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{35}) - %msg %n</pattern>
+        </encoder>
+    </appender>
+
+
+    <!-- 按每 1 小时生成日志文件
+    <appender name="HourRollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_FILE}_%d{yyyy-MM-dd_HH}.%i.log</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <charset>UTF-8</charset>
+            <outputPatternAsHeader>true</outputPatternAsHeader>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{35}) - %msg %n</pattern>
+        </encoder>
+    </appender>
+    -->
+
+
+    <!-- 开发阶段只输出日志到终端 -->
+    <springProfile name="dev,staging">
+        <root level="DEBUG">
+            <appender-ref ref="StdoutConsole" />
+        </root>
+
+        <logger name="com.pepstack.guru" level="DEBUG" additivity="false">
+            <appender-ref ref="StdoutConsole" />
+        </logger>
+    </springProfile>
+
+
+    <!-- 测试阶段输出日志到终端和日志文件 -->
+    <springProfile name="test">
+        <!-- 按 N 分钟生成日志文件: N = rollingIntervalMinutes
+            http://ronanquillevere.github.io/2015/08/04/rolling-log-15-min.html
+        -->
+        <appender name="FiveMinutesRollingFile" class="com.pepstack.guru.MinutesRollingFileAppender">
+            <file>${LOG_FILE}.log</file>
+
+            <!-- The default rollingIntervalMinutes is 10 -->
+            <param name="rollingIntervalMinutes" value="5"/>
+
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_FILE}_%d{yyyy-MM-dd_HHmm}.%i.log</fileNamePattern>
+
+                <!-- The default maximum file size is 10MB -->
+                <maxFileSize>5MB</maxFileSize>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>1GB</totalSizeCap>
+            </rollingPolicy>
+
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <charset>UTF-8</charset>
+                <outputPatternAsHeader>true</outputPatternAsHeader>
+                <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{35}) - %msg %n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="StdoutConsole" />
+            <appender-ref ref="FiveMinutesRollingFile" />
+        </root>
+
+        <logger name="com.pepstack.guru" level="DEBUG" additivity="false">
+            <appender-ref ref="StdoutConsole" />
+            <appender-ref ref="FiveMinutesRollingFile"/>
+        </logger>
+    </springProfile>
+
+
+    <!-- 产品仅输出日志到文件 -->
+    <springProfile name="prod">
+        <!-- 按天生成日志文件 -->
+        <appender name="DayRollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_FILE}.log</file>
+
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_FILE}_%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+
+                <!-- The default maximum file size is 10MB -->
+                <maxFileSize>100MB</maxFileSize>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>1GB</totalSizeCap>
+            </rollingPolicy>
+
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <charset>UTF-8</charset>
+                <outputPatternAsHeader>true</outputPatternAsHeader>
+                <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{35}) - %msg %n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="WARN">
+            <appender-ref ref="DayRollingFile" />
+        </root>
+
+        <logger name="com.pepstack.guru" level="INFO" additivity="false">
+            <appender-ref ref="DayRollingFile"/>
+        </logger>
+    </springProfile>
+
+</configuration>

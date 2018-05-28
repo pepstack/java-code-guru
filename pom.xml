@@ -9,7 +9,7 @@
 
     <groupId>com.pepstack.guru</groupId>
     <artifactId>pepstack-java-guru</artifactId>
-    <version>1.0.0-PRE</version>
+    <version>1.0.2-PRE</version>
     <packaging>jar</packaging>
 
     <name>pepstack-java-util</name>

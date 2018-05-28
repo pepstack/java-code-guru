@@ -57,6 +57,7 @@ hs_err_pid*
 /.mvn/
 build/
 tmp/
+logs/
 .git/
 .mvn/
 target/

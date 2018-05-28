@@ -18,6 +18,16 @@
 *
 * 3. This notice may not be removed or altered from any source distribution.
 ***********************************************************************/
+/**
+ * @file: StatusCode.java
+ *
+ *
+ * @author: master@pepstack.com
+ *
+ * @create: 2018-05-04
+ *
+ * @update: 2018-05-28 22:52:17
+ */
 package com.pepstack.guru;
 
 

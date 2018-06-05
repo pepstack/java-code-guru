@@ -142,7 +142,7 @@ public class AppTest extends TestCase {
 
         assertFalse(PhoneValidator.isPhone("99899799789"));
     }
-    
+
 
     public void testCrypto() {
 		String inplain = "Shanghai";
@@ -231,7 +231,7 @@ public class AppTest extends TestCase {
 		//RSA.SecretCert cert = RSA.KeyStore.getInstance().getSecretCert();
 
         //RSA.exportCertFile(cert, "/tmp/client.secret");
-        
+
         RSA.SecretCert cert = RSA.importCertFile("/tmp/client.secret");
 
     }

@@ -19,14 +19,14 @@
 * 3. This notice may not be removed or altered from any source distribution.
 ***********************************************************************/
 /**
- * @file:
+ * @file: RC4Util.java
  *
  *
  * @author: master@pepstack.com
  *
  * @create: 2018-05-04
  *
- * @update: 2018-05-29 16:51:24
+ * @update: 2018-06-05 23:41:33
  */
 package com.pepstack.guru;
 

@@ -19,14 +19,14 @@
 * 3. This notice may not be removed or altered from any source distribution.
 ***********************************************************************/
 /**
- * @file:
+ * @file: RSA.java
  *
  *
  * @author: master@pepstack.com
  *
  * @create: 2014-12-29
  *
- * @update:
+ * @update: 2018-06-06 01:42:37
  */
 package com.pepstack.crypto;
 
@@ -37,6 +37,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+
 import java.util.Date;
 
 import java.math.BigInteger;
@@ -62,6 +63,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+
+// http://www.bouncycastle.org/wiki/display/JA1/BC+Version+2+APIs
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import org.apache.commons.lang.StringUtils;
@@ -428,7 +431,7 @@ public final class RSA {
         public String getHexPrivateExponent() {
 			return hexPrivateExponent;
 		}
-        
+
 
 		public KeyPair getKeyPair() {
 			//RSAPublicKey publicKey = keyStore.genPublidKey(hexModulus, hexPublicExponent);

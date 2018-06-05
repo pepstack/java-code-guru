@@ -19,14 +19,14 @@
 * 3. This notice may not be removed or altered from any source distribution.
 ***********************************************************************/
 /**
- * @file:
+ * @file: Encode.java
  *
  *
  * @author: master@pepstack.com
  *
  * @create: 2014-12-29
  *
- * @update:
+ * @update: 2018-06-05 23:18:23
  */
 package com.pepstack.crypto;
 

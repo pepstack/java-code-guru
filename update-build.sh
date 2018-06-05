@@ -22,3 +22,5 @@ $_cdir/pysrc/updt.py \
     --filter="java" \
     --author="master@pepstack.com" \
     --recursive
+
+mvn clean compile

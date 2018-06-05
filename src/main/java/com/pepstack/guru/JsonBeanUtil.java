@@ -26,7 +26,7 @@
  *
  * @create: 2018-05-04
  *
- * @update: 2018-05-29 16:51:24
+ * @update: 2018-06-05 15:13:10
  */
 package com.pepstack.guru;
 
@@ -104,13 +104,14 @@ public final class JsonBeanUtil {
     public static Map<String, Object> JsonToMap(JSONObject jsonObject) {
         Map<String, Object> resultMap = new HashMap<>();
 
-        Iterator<String> iterator = jsonObject.keys();
+
+        Iterator<?> iterator = jsonObject.keys();
 
         String key = null;
         Object value = null;
 
         while (iterator.hasNext()) {
-            key = iterator.next();
+            key = (String) iterator.next();
             value = jsonObject.get(key);
 
             resultMap.put(key, value);
@@ -178,13 +179,13 @@ public final class JsonBeanUtil {
 
         Map<String, T> beanMap = new HashMap<>();
 
-        Iterator<String> iterator = jsonObjMapColl.keys();
+        Iterator<?> iterator = jsonObjMapColl.keys();
 
         String key = null;
         String value = null;
 
         while (iterator.hasNext()) {
-            key = iterator.next();
+            key = (String) iterator.next();
 
             // value is a map string
             value = jsonObjMapColl.getString(key);

@@ -77,6 +77,30 @@
             <version>5.0.4.RELEASE</version>
         </dependency>
 
+        <!-- The Bouncy Castle Crypto package is a Java implementation
+          of cryptographic algorithms. This jar contains JCE provider
+          and lightweight API for the Bouncy Castle Cryptography APIs
+          for JDK 1.5 to JDK 1.8.
+        -->
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk15on</artifactId>
+			<version>1.59</version>
+		</dependency>
+
+		<!-- apache commons -->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.11</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.6</version>
+        </dependency>
+
     </dependencies>
 
     <build>

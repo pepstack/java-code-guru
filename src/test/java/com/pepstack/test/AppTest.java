@@ -1,17 +1,24 @@
 /**
  * AppTest.java
  */
-package com.pepstack.guru;
+package com.pepstack.test;
 
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import com.pepstack.guru.AccountValidator;
-import com.pepstack.guru.PhoneValidator;
-import com.pepstack.guru.JsonResult;
-import com.pepstack.guru.RC4;
+import com.pepstack.crypto.*;
+import com.pepstack.guru.*;
+
+import org.apache.commons.codec.binary.Hex;
+
+import java.io.File;
+
+import java.security.KeyPair;
+
+import java.security.interfaces.RSAPublicKey;
+import java.security.interfaces.RSAPrivateKey;
 
 
 /**
@@ -27,9 +34,11 @@ public class AppTest extends TestCase {
         super( testName );
     }
 
+
     private void print(String text) {
         System.out.println(text);
     }
+
 
     /**
      * @return the suite of tests being tested
@@ -37,6 +46,7 @@ public class AppTest extends TestCase {
     public static Test suite() {
         return new TestSuite( AppTest.class );
     }
+
 
     public void testValidator() {
         assertFalse("Username not less than 3", AccountValidator.validateUsername("Li"));
@@ -131,5 +141,98 @@ public class AppTest extends TestCase {
         assertFalse(PhoneValidator.isPhone(" 1380013800"));
 
         assertFalse(PhoneValidator.isPhone("99899799789"));
+    }
+    
+
+    public void testCrypto() {
+		String inplain = "Shanghai";
+		String inkey = "Pepstack.com";
+
+		String cipher = RC4Util.toHexString(RC4.encrypt(inplain, inkey));
+
+		String plain = RC4Util.decry_RC4(cipher, inkey);
+
+		print(plain + " => " + cipher);
+		
+		assertEquals(plain, inplain);
+	}
+	
+	
+	public void testMD5() {
+        print("================ testMD5 ================");
+
+        String cipher = MD5.hexSign("abc");
+        String cipher2 = RandomNumberGen.md5Message("abc");
+        print(cipher + " = " + cipher2);
+		assertEquals(cipher2, cipher);
+
+        cipher = MD5.hexSign("abc", "UTF-8");
+        cipher2 = RandomNumberGen.md5Message("abc");
+        print(cipher + " = " + cipher2);
+        assertEquals(cipher2, cipher);
+
+        byte[] bycip = Encode.hexStringToBytes(cipher);
+        String scip = Encode.toHexString(bycip);
+        assertEquals(scip, cipher);
+
+        cipher = MD5.hmacHexSign("abc", null);
+        print(cipher);
+        assertEquals("900150983cd24fb0d6963f7d28e17f72", cipher);
+
+        cipher = MD5.hmacHexSign("abc", "18902130");
+        print(cipher);
+        assertEquals("572ed8a3166b3b0de71bd205cfa35c6a", cipher);
+
+        cipher = MD5.hmacHexSign("abc!$df#%de", "abcdg1028");
+        print(cipher);
+        assertEquals("6635f2eef89f9d489554c61de9a7c834", cipher);
+    }
+
+
+	public void testRSA() throws Exception {
+        print("================ testRSA ================");
+
+        String modulus = RSA.getModulus();
+        String publicExponent = RSA.getPublicExponent();
+        String privateExponent = RSA.getPrivateExponent();
+
+        print(">>>> modulus=" + modulus);
+        print(">>>> public exponent=" + publicExponent);
+        print(">>>> private exponent=" + privateExponent);
+
+        String js_modulus = "009b4a8fcb9ccb748d13b4e05fbda511c49ba39bc3703259b793b5e1f046e7ce60e37faca9954722d961168220e2a1d77d0de35716f04eb5d667b3118ad223713b64fcb2e01ff880c958ea5908f57ce23b92625281dfc347d0516cf4f9154f31678bb70bf14659f453f7aa97dc27db215085067aed5837e91fd00078a3f70b787b";
+        String js_public_exponent = "010001";
+        String js_private_exponent = "243871edb5f6a68ab94bf9019bc442aeaef6ac401b8d42ebd4a219bee76aedf21f5e0a31cbc5b9d526160fe807b46404a116a39b90156bc8448bb9cdbd51d2f9006d68609959b8d61e46454bbcca249045c5858f1fc4a989663559bca89d39e3f56ee8f4ea26145f96324e1e47b49a80134cab161186d985dfda201088ae4d21";
+
+        RSAPrivateKey privateKey = RSA.genRSAPrivateKey(js_modulus, js_private_exponent);
+
+        String cipher_js = "184648127daf491b30574434e10cbcfebd3695b797cce225610d8cd2becbdbdb3bac130f116932fe2d4239a4398ff0b610e1a27500d554daffc12febe9892e2c250e2b847cedaecfb3dfe8de9abede94325ccaf8d25531811f0c32422ba948d095beb6dee548a257bafb7cf718e6f4f501c128d6f65af3208f8f378015712a4f";
+        String plain = RSA.decryptHexByJs(RSA.getProvider(), privateKey, cipher_js);
+        print("plain=" + plain);
+        assertEquals(plain, "abc123!$%@");
+
+        js_private_exponent = "3d93837d844e7e2e5ecbd6cdea0be44c2e6fd6537c8393de90becb30d6bdfd2c97ca9e6f2a94cfad3bbc44f378f82d3b0d8054a01c8b9c4815fcac64955a735b7378827b54f11aec9efcdd4ccff8355becdc85bb2d7c049e62e0ee08ad07b081c975f6654398f58208300412eb21e65ef01ba7155a3cc3686f3b7e17cd182b11";
+        js_modulus = "00911d9b224a082dda230e9b0ec86c76d3c60a97f139345b27db5fbf560b6c3179fe34f3f75b251c40a7b439b2db1c169a1bff779cf53c6c9fb875ed8b871a3bc4a3feb36db560b589fb2f6b162e7f48895187a0da079819e9c15c6c2a81f748a103faa680d1f0417c8cd34d4d9c308ba58577c1f7968fae89a9be05b7d4b195c9";
+
+        cipher_js = "572ca1dcda60ba2e9d0467017e1be112e0eb5de8fd5ab8597ea3ba1ded1a91e32e3f4c2568f32794e87b6fc679762398fc15f35deff8342cb310da10dd351ba2b776b11518b7a6e65fd23120a4f6a0807204d0a3b0196070412c1307e27659b573344c208f6e63c4f3a6cfff4c43e0525b53757c0ce3aa1b092977603d1fecec";
+
+        privateKey = RSA.genRSAPrivateKey(js_modulus, js_private_exponent);
+
+        plain = RSA.decryptHexByJs(RSA.getProvider(), privateKey, cipher_js);
+        print("plain=" + plain);
+        assertEquals(plain, "12345678");
+    }
+
+
+	public void testRSAStore() throws Exception {
+        print("================ testRSAStore ================");
+
+		// 输出证书文件, 此文件发送给客户端
+		//RSA.SecretCert cert = RSA.KeyStore.getInstance().getSecretCert();
+
+        //RSA.exportCertFile(cert, "/tmp/client.secret");
+        
+        RSA.SecretCert cert = RSA.importCertFile("/tmp/client.secret");
+
     }
 }

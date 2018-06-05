@@ -19,7 +19,7 @@
 * 3. This notice may not be removed or altered from any source distribution.
 ***********************************************************************/
 /**
- * @file: RC4.java
+ * @file:
  *
  *
  * @author: master@pepstack.com
@@ -30,15 +30,11 @@
  */
 package com.pepstack.guru;
 
-/**
- * RC4.java
- *
- */
 
 import java.io.UnsupportedEncodingException;
 
 
-public class RC4 {
+public class RC4Util {
     public final static String CHARSET = "UTF-8";
 
     public static String decry_RC4(byte[] data, String key) {
@@ -110,7 +106,7 @@ public class RC4 {
     }
 
 
-    private static String toHexString(String s) {
+    public static String toHexString(String s) {
         String str = "";
         for (int i = 0; i < s.length(); i++) {
             int ch = (int) s.charAt(i);
@@ -126,7 +122,7 @@ public class RC4 {
     }
 
 
-    private static byte[] HexString2Bytes(String src) {
+    public static byte[] HexString2Bytes(String src) {
         int size = src.length();
         byte[] ret = new byte[size / 2];
         byte[] tmp = null;

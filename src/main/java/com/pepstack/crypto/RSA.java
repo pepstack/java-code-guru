@@ -32,6 +32,8 @@ package com.pepstack.crypto;
 
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -39,6 +41,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import java.util.Date;
+import java.util.Locale;
+import java.util.Base64;
 
 import java.math.BigInteger;
 
@@ -49,17 +53,27 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
+import java.security.Signature;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SignatureException;
+import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.interfaces.RSAPublicKey;
 import java.security.interfaces.RSAPrivateKey;
+
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.InvalidKeySpecException;
 
-import javax.crypto.Cipher;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateEncodingException;
 
-import org.apache.commons.io.IOUtils;
+import javax.crypto.Cipher;
+import javax.security.auth.x500.X500Principal;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
@@ -67,57 +81,164 @@ import org.apache.commons.codec.binary.Hex;
 // http://www.bouncycastle.org/wiki/display/JA1/BC+Version+2+APIs
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x500.X500Name;
+
+import org.bouncycastle.operator.OperatorCreationException;
+
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateFormatUtils;
 
 
 public final class RSA {
-    /**
-     * encryption algorithm
-     */
-    private static final String KEY_ALGORITHM = "RSA";
+    // key size with 1024. DO NOT change it.
+    public static final int KEY_SIZE = 1024;
+
+    // encryption algorithm
+    public static final String KEY_ALGORITHM = "RSA";
+
+    // signature algorithm: SHA1withRSA, MD5withRSA
+    public static final String SGN_ALGORITHM = "SHA1withRSA";
 
 
-    /**
-     * key size with 1024. not change it.
-     */
-    private static final int KEY_SIZE = 1024;
-
-
-    /**
-     * signature algorithm
-     */
-    private static final String SGN_ALGORITHM = "MD5withRSA";
-
-
-    /**
-     * RSA max plain text block size (bytes) for encrypt
-     * 	 1024 / 8 - 11 = 117
-     */
+    // RSA max plain text block size (bytes) for encrypt
+    //	 1024 / 8 - 11 = 117
     private static final int ENCRYPT_BLOCK = 117;
 
 
-    /**
-     * RSA max cipher text block size (bytes) for decrypt
-     */
+    // RSA max cipher text block size (bytes) for decrypt
     private static final int DECRYPT_BLOCK = 128;
 
 
-    /**
-     * RSA singleton instance
-     */
+    // RSA singleton instance
     private static final KeyStore keyStore = KeyStore.getInstance();
 
 
-    private RSA() {
-        // DO NOT CALL ME
+    private static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
+    private static final String END_CERT = "-----END CERTIFICATE-----";
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+
+
+    public static KeyStore getKeyStoreSingleton() {
+        return keyStore;
     }
 
 
-    /**
-     * encrypt data with public key
-     */
-    private static byte[] encrypt(Provider provider, PublicKey publicKey, byte[] data) throws Exception {
+    private RSA() {
+        // DO NOT CALL IT!
+    }
+
+
+    // 安全地关闭流
+    public static void finallyCloseStreamNoThrow(Closeable is) {
+        try {
+            if ( is != null ) {
+                is.close();
+            }
+        } catch(IOException e) {
+        }
+    }
+
+
+    public static final KeyFactory getKeyFactory(Provider provider) {
+        try {
+            final KeyFactory factory = KeyFactory.getInstance(KEY_ALGORITHM, provider);
+            return factory;
+        } catch (NoSuchAlgorithmException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+
+    // 生成公钥
+    public static RSAPublicKey genPublicKey(KeyFactory factory, String hexModulus, String hexPublicExponent) {
+        try {
+            byte[] modulus = Hex.decodeHex(hexModulus.toCharArray());
+            byte[] publicExponent = Hex.decodeHex(hexPublicExponent.toCharArray());
+
+            RSAPublicKeySpec publicKeySpec = new RSAPublicKeySpec(new BigInteger(modulus), new BigInteger(publicExponent));
+
+            return (RSAPublicKey) factory.generatePublic(publicKeySpec);
+        } catch (InvalidKeySpecException ex) {
+            throw new RuntimeException(ex);
+        } catch (DecoderException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+
+    // 生成私钥
+    public static RSAPrivateKey genPrivateKey(KeyFactory factory, String hexModulus, String hexPrivateExponent) {
+        try {
+            byte[] modulus = Hex.decodeHex(hexModulus.toCharArray());
+            byte[] privateExponent = Hex.decodeHex(hexPrivateExponent.toCharArray());
+
+            RSAPrivateKeySpec privateKeySpec = new RSAPrivateKeySpec(new BigInteger(modulus), new BigInteger(privateExponent));
+
+            return (RSAPrivateKey) factory.generatePrivate(privateKeySpec);
+        } catch (InvalidKeySpecException ex) {
+            throw new RuntimeException(ex);
+        } catch (DecoderException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+
+    // 私钥签名
+    public static byte[] sign(Provider provider, PrivateKey privateKey, byte[] data) throws Exception {
+        Signature signature = Signature.getInstance(SGN_ALGORITHM, provider);
+        signature.initSign(privateKey);
+        signature.update(data);
+        byte[] signBytes = signature.sign();
+        return signBytes;
+    }
+
+    
+    // 公钥验证签名
+    public static boolean verify(Provider provider, PublicKey publicKey, byte[] data, byte[] signBytes) throws Exception {
+        boolean ok = false;
+        Signature signature = Signature.getInstance(SGN_ALGORITHM, provider);
+        signature.initVerify(publicKey);
+        signature.update(data);
+        ok = signature.verify(signBytes);
+        return ok;
+    }
+
+
+    // 私钥签名字符串
+    public static String signHex(Provider provider, PrivateKey privateKey, String dataStr) {
+        try {
+            byte[] hash = sign(provider, privateKey, dataStr.getBytes());
+            String signHexStr = new String(Hex.encodeHex(hash));
+            return signHexStr;
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+
+    // 公钥验证签名字符串
+    public static boolean verifyHex(Provider provider, PublicKey publicKey, String dataStr, String signHexStr) {
+        try {
+            byte[] signBytes = Hex.decodeHex(signHexStr.toCharArray());
+
+            boolean ok = verify(provider, publicKey, dataStr.getBytes(), signBytes);
+
+            return ok;
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+
+    // 公钥加密
+    public static byte[] encrypt(Provider provider, PublicKey publicKey, byte[] data) throws Exception {
         Cipher ci = Cipher.getInstance(KEY_ALGORITHM, provider);
         ci.init(Cipher.ENCRYPT_MODE, publicKey);
 
@@ -145,21 +266,16 @@ public final class RSA {
 
                 return output.toByteArray();
             } catch (Exception e) {
-                e.printStackTrace();
                 return null;
             } finally {
-                if (output != null) {
-                    output.close();
-                }
+                finallyCloseStreamNoThrow(output);
             }
         }
     }
 
 
-    /**
-     * decrypt data with private key
-     */
-    private static byte[] decrypt(Provider provider, PrivateKey privateKey, byte[] data) throws Exception {
+    // 私钥解密
+    public static byte[] decrypt(Provider provider, PrivateKey privateKey, byte[] data) throws Exception {
         Cipher ci = Cipher.getInstance(KEY_ALGORITHM, provider);
         ci.init(Cipher.DECRYPT_MODE, privateKey);
 
@@ -190,277 +306,200 @@ public final class RSA {
                 e.printStackTrace();
                 return null;
             } finally {
-                if (output != null) {
-                    output.close();
-                }
+                finallyCloseStreamNoThrow(output);
             }
         }
     }
 
 
-    /**
-     * get rsa private key
-     */
-    public static RSAPrivateKey getRSAPrivateKey() {
-        return keyStore.getPrivateKey();
-    }
-
-
-    /**
-     * get rsa public key
-     */
-    public static RSAPublicKey getRSAPublicKey() {
-        return keyStore.getPublicKey();
-    }
-
-
-    /**
-     * get provider
-     */
-    public static Provider getProvider() {
-        return keyStore.getProvider();
-    }
-
-
-    /**
-     * get key factory
-     */
-    public static KeyFactory getKeyFactory() {
-        return keyStore.getFactory();
-    }
-
-
-    /**
-     * get modulus of public key (hex encoded)
-     */
-    public static String getModulus() {
-        return keyStore.getHexModulus();
-    }
-
-
-    public static String getModulus(RSAPublicKey publicKey) {
-        return new String(Hex.encodeHex(publicKey.getModulus().toByteArray()));
-    }
-
-
-    /**
-     * get public exponent of public key (hex encoded)
-     */
-    public static String getPublicExponent() {
-        return keyStore.getHexPublicExponent();
-    }
-
-
-    public static String getPublicExponent(RSAPublicKey publicKey) {
-        return new String(Hex.encodeHex(publicKey.getPublicExponent().toByteArray()));
-    }
-
-
-    /**
-     * get private exponent of private key (hex encoded)
-     */
-    public static String getPrivateExponent() {
-        return keyStore.getHexPrivateExponent();
-    }
-
-
-    /**
-     * generate rsa private key
-     */
-    public static RSAPrivateKey genRSAPrivateKey(String hexModulus, String hexPrivateExponent) {
-        return keyStore.genPrivateKey(hexModulus, hexPrivateExponent);
-    }
-
-
-    /**
-     * generate rsa public key
-     */
-    public static RSAPublicKey genRSAPublidKey(String hexModulus, String hexPublicExponent) {
-        return keyStore.genPublicKey(hexModulus, hexPublicExponent);
-    }
-
-
-    /**
-     * encrypt string to hex string with public key
-     */
-    public static String encryptHex(String plainText) {
+    // 使用公钥加密字符串, 加密后得到 16 进制字符串
+    //
+    public static String encryptHex(Provider provider, RSAPublicKey publicKey, String plainText) {
         try {
-            return new String(Hex.encodeHex(encrypt(
-                keyStore.getProvider(),
-                keyStore.getPublicKey(),
-                plainText.getBytes())));
+            byte[] cipher = encrypt(provider, publicKey, plainText.getBytes());
+
+            return  new String(Hex.encodeHex(cipher));
         } catch (Exception ex) {
-            ex.printStackTrace();
+            throw new RuntimeException(ex);
         }
-        return null;
     }
 
-
-    /**
-     * decrypt hex string using default keystore
-     */
-    public static String decryptHex(String cipherText) {
-        if (StringUtils.isBlank(cipherText)) {
-            return null;
-        }
+    
+    // 使用私钥解密 16 进制加密字符串, 解密后得到原字符串
+    //
+    public static String decryptHex(Provider provider, RSAPrivateKey privateKey, String cipherText) {
         try {
-            byte[] plain = decrypt(keyStore.getProvider(),
-                keyStore.getPrivateKey(),
-                Hex.decodeHex(cipherText.toCharArray()));
-            return new String(plain);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return null;
-    }
+            if (StringUtils.isBlank(cipherText)) {
+                return null;
+            }
 
-
-    /**
-     * decrypt hex string encryptd by javascript
-     */
-    public static String decryptHexByJs(String cipherText) {
-        String plainText = decryptHex(cipherText);
-        if (plainText != null) {
-            return StringUtils.reverse(plainText);
-        }
-        return null;
-    }
-
-
-    public static String decryptHex(Provider provider, PrivateKey privateKey, String cipherText) {
-        if (StringUtils.isBlank(cipherText)) {
-            return null;
-        }
-        try {
             byte[] plain = decrypt(provider, privateKey, Hex.decodeHex(cipherText.toCharArray()));
+
             return new String(plain);
         } catch (Exception ex) {
-            ex.printStackTrace();
+        }
+
+        return null;
+    }
+
+
+    // 使用证书公钥加密字符串, 加密后得到 16 进制字符串
+    //
+    public static String encryptHex(SecretKeyPair secretCert, String plainText) {
+        return encryptHex(secretCert.getProvider(), secretCert.getPublicKey(), plainText);
+    }
+
+
+    // 使用证书私钥解密 16 进制加密字符串, 解密后得到原字符串
+    //
+    public static String decryptHex(SecretKeyPair secretCert, String cipherText) {
+        return decryptHex(secretCert.getProvider(), secretCert.getPrivateKey(), cipherText);
+    }
+
+
+    // javascript RSA 加密后的字符串解密后需要反转
+    public static String reverseString(String str) {
+        if (str != null) {
+            return StringUtils.reverse(str);
         }
         return null;
     }
 
 
-    /**
-     * decrypt hex string using specified keystore
-     */
-    public static String decryptHexByJs(Provider provider, PrivateKey privateKey, String cipherText) {
-        String plainText = decryptHex(provider, privateKey, cipherText);
-        if (plainText != null) {
-            return StringUtils.reverse(plainText);
-        }
-        return null;
+    public static String getX509CertHexModulus(X509Certificate x509cert) {
+        final RSAPublicKey pubKey = (RSAPublicKey) x509cert.getPublicKey();
+        final String hexModulus = new String(Hex.encodeHex(pubKey.getModulus().toByteArray()));
+        return hexModulus;
     }
 
 
-	public static void exportCertFile(SecretCert cert, String certFile) {
-		FileOutputStream fos = null;
-		ObjectOutputStream oos = null;
-
-		try {
-			File keyStoreFile = new File(certFile);
-			fos = FileUtils.openOutputStream(keyStoreFile);
-			oos = new ObjectOutputStream(fos);
-			oos.writeObject(cert.getKeyPair());
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			throw new RuntimeException(ex);
-		} finally {
-			IOUtils.closeQuietly(oos);
-			IOUtils.closeQuietly(fos);
-		}
-	}
+    public static String getX509CertHexPublicExponent(X509Certificate x509cert) {
+        final RSAPublicKey pubKey = (RSAPublicKey) x509cert.getPublicKey();
+        final String hexPublicExponent = new String(Hex.encodeHex(pubKey.getPublicExponent().toByteArray()));
+        return hexPublicExponent;
+    }
 
 
-	public static SecretCert importCertFile(String certFile) {
-		FileInputStream fis = null;
-		ObjectInputStream ois = null;
-		SecretCert cert = null;
-
-		try {
-			File keyStoreFile = new File(certFile);
-
-			fis = FileUtils.openInputStream(keyStoreFile);
-			ois = new ObjectInputStream(fis);
-
-			KeyPair pair = (KeyPair) ois.readObject();
-
-			RSAPublicKey publicKey = (RSAPublicKey) pair.getPublic();
-			RSAPrivateKey privateKey = (RSAPrivateKey) pair.getPrivate();
-
-			String hexModulus = new String(Hex.encodeHex(publicKey.getModulus().toByteArray()));
-			String hexPublicExponent = new String(Hex.encodeHex(publicKey.getPublicExponent().toByteArray()));
-			String hexPrivateExponent = new String(Hex.encodeHex(privateKey.getPrivateExponent().toByteArray()));
-			
-			cert = new SecretCert(hexModulus, hexPublicExponent, hexPrivateExponent);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			throw new RuntimeException(ex);
-		} finally {
-			IOUtils.closeQuietly(ois);
-			IOUtils.closeQuietly(fis);
-		}
-
-		return cert;
-	}
+    // X509 证书输出到字符串
+    //   https://stackoverflow.com/questions/3313020/write-x509-certificate-into-pem-formatted-string-in-java
+    public static String formatPemCertificate(final Certificate certificate) throws CertificateEncodingException {
+        final Base64.Encoder encoder = Base64.getMimeEncoder(64, LINE_SEPARATOR.getBytes());
+        final byte[] rawCrtText = certificate.getEncoded();
+        final String encodedCertText = new String(encoder.encode(rawCrtText));
+        final String pem_cert = BEGIN_CERT + LINE_SEPARATOR + encodedCertText + LINE_SEPARATOR + END_CERT;
+        return pem_cert;
+    }
 
 
-	public static class SecretCert {
-		private String hexModulus;
-        private String hexPublicExponent;
-        private String hexPrivateExponent;
+    public static class SecretKeyPair {
+        private final Provider provider;
+        private final KeyPair keyPair;
 
 
-		public SecretCert(String hexModulus, String hexPublicExponent, String hexPrivateExponent) {
-			this.hexModulus = hexModulus;
-			this.hexPublicExponent = hexPublicExponent;
-			this.hexPrivateExponent = hexPrivateExponent;
-		}
+        public SecretKeyPair(Provider bcProvider, KeyPairGenerator pairGenerator) {
+            provider = bcProvider;
+            keyPair = pairGenerator.generateKeyPair();
+        }
 
 
-		public String getHexModulus() {
-			return hexModulus;
-		}
-		
-		
+        public SecretKeyPair(Provider bcProvider, String hexModulus, String hexPublicExponent, String hexPrivateExponent) {
+            provider = bcProvider;
+           
+            final KeyFactory factory = RSA.getKeyFactory(provider);
+
+            final RSAPublicKey publicKey = RSA.genPublicKey(factory, hexModulus, hexPublicExponent);
+            final RSAPrivateKey privateKey = RSA.genPrivateKey(factory, hexModulus, hexPrivateExponent);
+
+            keyPair = new KeyPair(publicKey, privateKey);
+        }
+
+
+        public Provider getProvider() {
+            return provider;
+        }
+
+
+        public KeyPair getKeyPair() {
+            return keyPair;
+        }
+
+
+        public RSAPublicKey getPublicKey() {
+            return (RSAPublicKey) keyPair.getPublic();
+        }
+
+
+        public RSAPrivateKey getPrivateKey() {
+            return (RSAPrivateKey) keyPair.getPrivate();
+        }
+
+
+        public String getHexModulus() {
+            final String hexModulus = new String(Hex.encodeHex(getPublicKey().getModulus().toByteArray()));
+            return hexModulus;
+        }
+
+
         public String getHexPublicExponent() {
-			return hexPublicExponent;
-		}
-		
-		
+            final String hexPublicExponent = new String(Hex.encodeHex(getPublicKey().getPublicExponent().toByteArray()));
+            return hexPublicExponent;
+        }
+
+
         public String getHexPrivateExponent() {
-			return hexPrivateExponent;
-		}
+            final String hexPrivateExponent = new String(Hex.encodeHex(getPrivateKey().getPrivateExponent().toByteArray()));
+            return hexPrivateExponent;
+        }
+        
 
+        // 生成 X509 证书 ( 证书只包含公钥, 对应的私钥要服务器自己保存. )
+        // https://www.programcreek.com/java-api-examples/index.php?api=org.bouncycastle.asn1.x509.SubjectPublicKeyInfo
+        //
+        public X509Certificate generateX509Certificate(String issuerName, String subjectName, Date startDate, Date endDate) throws CertificateException {
+            try {
+                java.security.Security.addProvider(new BouncyCastleProvider());
 
-		public KeyPair getKeyPair() {
-			//RSAPublicKey publicKey = keyStore.genPublidKey(hexModulus, hexPublicExponent);
-			//RSAPrivateKey privateKey = RSA.genPrivateKey(hexModulus, hexPrivateExponent);
-			
-			//return new KeyPair(publicKey, privateKey);
-			return null;
-		}
+                X500Name issuer = new X500Name(issuerName);
+
+                X500Name subject = new X500Name(subjectName);
+
+                SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(getPublicKey().getEncoded());
+
+                BigInteger serialNo = new BigInteger(64, new SecureRandom());
+
+                X509v3CertificateBuilder v3certBuilder =
+                    new X509v3CertificateBuilder(issuer, serialNo, startDate, endDate, subject, subPubKeyInfo);
+
+                ContentSigner signer = new JcaContentSignerBuilder(RSA.SGN_ALGORITHM).setProvider(provider.getName()).build(getPrivateKey());
+
+                X509CertificateHolder certHolder = v3certBuilder.build(signer);
+
+                return new JcaX509CertificateConverter().setProvider(provider.getName()).getCertificate(certHolder);
+            } catch (OperatorCreationException ex) {
+                throw new CertificateException(ex);
+            } catch (CertificateException ex) {
+                throw new CertificateException(ex);
+            }
+        }
+
     }
 
 
-    /**
-     * inner class
-     */
-    private static class KeyStore {
-        private Provider provider;
-        private KeyFactory factory;
-        private KeyPair pair;
-        private RSAPublicKey publicKey;
-        private RSAPrivateKey privateKey;
+    // 单例内部静态类, 只能访问外部类的静态方法
+    //
+    public static class KeyStore {
+        private final Provider provider;
 
-        private String hexModulus;
-        private String hexPublicExponent;
-        private String hexPrivateExponent;
+        private final KeyPairGenerator pairGenerator;
+
+        private final SecretKeyPair secretCert;
 
 
         private static enum Singleton {
             INSTANCE;
+
             private static final KeyStore singleton = new KeyStore();
+
             public KeyStore getSingleton() {
                 return singleton;
             }
@@ -469,26 +508,25 @@ public final class RSA {
 
         private KeyStore() {
             try {
-
                 provider = new BouncyCastleProvider();
-                KeyPairGenerator kpg = KeyPairGenerator.getInstance(KEY_ALGORITHM, provider);
-                factory = KeyFactory.getInstance(KEY_ALGORITHM, provider);
 
-                byte[] seeds = DateFormatUtils.format(new Date(), "yyyyMMdd").getBytes();
-                kpg.initialize(KEY_SIZE, new SecureRandom(seeds));
+                SecureRandom random = new SecureRandom();
+                random.setSeed(System.currentTimeMillis());
 
-                pair = kpg.generateKeyPair();
+                pairGenerator = KeyPairGenerator.getInstance(KEY_ALGORITHM, provider);
+                pairGenerator.initialize(KEY_SIZE, random);
 
-                publicKey = (RSAPublicKey) pair.getPublic();
-                privateKey = (RSAPrivateKey) pair.getPrivate();
-
-                hexModulus = new String(Hex.encodeHex(publicKey.getModulus().toByteArray()));
-                hexPublicExponent = new String(Hex.encodeHex(publicKey.getPublicExponent().toByteArray()));
-                hexPrivateExponent = new String(Hex.encodeHex(privateKey.getPrivateExponent().toByteArray()));
-
+                secretCert = createSecretKeyPair();
             } catch (NoSuchAlgorithmException ex) {
                 throw new RuntimeException(ex);
             }
+        }
+
+
+        // 创建新的证书密钥对
+        public SecretKeyPair createSecretKeyPair() {
+            SecretKeyPair secret = new SecretKeyPair(provider, pairGenerator);
+            return secret;
         }
 
 
@@ -502,83 +540,28 @@ public final class RSA {
         }
 
 
-        public KeyFactory getFactory() {
-            return factory;
+        public final KeyFactory getKeyFactory() {
+            try {
+                final KeyFactory factory = KeyFactory.getInstance(KEY_ALGORITHM, provider);
+                return factory;
+            } catch (NoSuchAlgorithmException ex) {
+                throw new RuntimeException(ex);
+            }
         }
 
 
-        public KeyPair getPair() {
-            return pair;
+        public KeyPairGenerator getKeyPairGenerator() {
+            return pairGenerator;
         }
 
 
-        public RSAPublicKey getPublicKey() {
-            return publicKey;
-        }
-
-
-        public RSAPrivateKey getPrivateKey() {
-            return privateKey;
-        }
-
-
-        public String getHexModulus() {
-            return hexModulus;
-        }
-
-
-        public String getHexPublicExponent() {
-            return hexPublicExponent;
-        }
-
-
-        public String getHexPrivateExponent() {
-            return hexPrivateExponent;
-        }
-
-
-		public SecretCert getSecretCert() {
-			return new SecretCert(hexModulus, hexPublicExponent, hexPrivateExponent);
+		public SecretKeyPair getSecretKeyPair() {
+			return secretCert;
 		}
 
 
-        /**
-         * generate public key
-         */
-        public RSAPublicKey genPublicKey(String hexModulus, String hexPublicExponent) {
-            try {
-                byte[] modulus = Hex.decodeHex(hexModulus.toCharArray());
-                byte[] publicExponent = Hex.decodeHex(hexPublicExponent.toCharArray());
-                RSAPublicKeySpec publicKeySpec = new RSAPublicKeySpec(new BigInteger(modulus), new BigInteger(publicExponent));
-                return (RSAPublicKey) factory.generatePublic(publicKeySpec);
-            } catch (InvalidKeySpecException ex) {
-                throw new RuntimeException(ex);
-            } catch (DecoderException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-
-
-        /**
-         * generate private key
-         */
-        public RSAPrivateKey genPrivateKey(String hexModulus, String hexPrivateExponent) {
-            try {
-                byte[] modulus = Hex.decodeHex(hexModulus.toCharArray());
-                byte[] privateExponent = Hex.decodeHex(hexPrivateExponent.toCharArray());
-                RSAPrivateKeySpec privateKeySpec = new RSAPrivateKeySpec(new BigInteger(modulus), new BigInteger(privateExponent));
-                return (RSAPrivateKey) factory.generatePrivate(privateKeySpec);
-            } catch (InvalidKeySpecException ex) {
-                throw new RuntimeException(ex);
-            } catch (DecoderException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-
-
-        /**
-         * save key store to file
-         */
+        /*
+        // save key store to file
         private void saveKeyStore(File keyStoreFile) {
             FileOutputStream fos = null;
             ObjectOutputStream oos = null;
@@ -590,15 +573,13 @@ public final class RSA {
                 ex.printStackTrace();
                 throw new RuntimeException(ex);
             } finally {
-                IOUtils.closeQuietly(oos);
-                IOUtils.closeQuietly(fos);
+                finallyCloseStreamNoThrow(oos);
+                finallyCloseStreamNoThrow(fos);
             }
         }
 
 
-        /**
-         * load key pair from key store file
-         */
+        // load key pair from key store file
         private void loadKeyStore(File keyStoreFile) {
             FileInputStream fis = null;
             ObjectInputStream ois = null;
@@ -618,9 +599,10 @@ public final class RSA {
                 ex.printStackTrace();
                 throw new RuntimeException(ex);
             } finally {
-                IOUtils.closeQuietly(ois);
-                IOUtils.closeQuietly(fis);
+                finallyCloseStreamNoThrow(ois);
+                finallyCloseStreamNoThrow(fis);
             }
         }
+        */
     }
 }

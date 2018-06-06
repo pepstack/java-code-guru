@@ -26,7 +26,7 @@
  *
  * @create: 2014-12-29
  *
- * @update: 2018-06-06 01:42:37
+ * @update: 2018-06-06 17:30:56
  */
 package com.pepstack.crypto;
 
@@ -103,7 +103,7 @@ public final class RSA {
     // encryption algorithm
     public static final String KEY_ALGORITHM = "RSA";
 
-    // signature algorithm: SHA1withRSA, MD5withRSA
+    // signature algorithm: SHA1withRSA(1024), MD5withRSA(1024), SHA256WithRSA(2048)
     public static final String SGN_ALGORITHM = "SHA1withRSA";
 
 
@@ -199,7 +199,7 @@ public final class RSA {
         return signBytes;
     }
 
-    
+
     // 公钥验证签名
     public static boolean verify(Provider provider, PublicKey publicKey, byte[] data, byte[] signBytes) throws Exception {
         boolean ok = false;
@@ -324,7 +324,7 @@ public final class RSA {
         }
     }
 
-    
+
     // 使用私钥解密 16 进制加密字符串, 解密后得到原字符串
     //
     public static String decryptHex(Provider provider, RSAPrivateKey privateKey, String cipherText) {
@@ -404,7 +404,7 @@ public final class RSA {
 
         public SecretKeyPair(Provider bcProvider, String hexModulus, String hexPublicExponent, String hexPrivateExponent) {
             provider = bcProvider;
-           
+
             final KeyFactory factory = RSA.getKeyFactory(provider);
 
             final RSAPublicKey publicKey = RSA.genPublicKey(factory, hexModulus, hexPublicExponent);
@@ -450,7 +450,7 @@ public final class RSA {
             final String hexPrivateExponent = new String(Hex.encodeHex(getPrivateKey().getPrivateExponent().toByteArray()));
             return hexPrivateExponent;
         }
-        
+
 
         // 生成 X509 证书 ( 证书只包含公钥, 对应的私钥要服务器自己保存. )
         // https://www.programcreek.com/java-api-examples/index.php?api=org.bouncycastle.asn1.x509.SubjectPublicKeyInfo
@@ -478,10 +478,11 @@ public final class RSA {
             } catch (OperatorCreationException ex) {
                 throw new CertificateException(ex);
             } catch (CertificateException ex) {
-                throw new CertificateException(ex);
+                throw ex;
+            } catch (Exception e) {
+                throw new CertificateException(e);
             }
         }
-
     }
 
 

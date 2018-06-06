@@ -194,7 +194,7 @@ public class AppTest extends TestCase {
         print("==== test RSA javascript ====");
 
         RSA.KeyStore keyStore = RSA.getKeyStoreSingleton();
-        
+
         RSA.SecretKeyPair secretCert = keyStore.getSecretKeyPair();
 
         String modulus = secretCert.getHexModulus();
@@ -215,7 +215,7 @@ public class AppTest extends TestCase {
 
         String cipher_js = "184648127daf491b30574434e10cbcfebd3695b797cce225610d8cd2becbdbdb3bac130f116932fe2d4239a4398ff0b610e1a27500d554daffc12febe9892e2c250e2b847cedaecfb3dfe8de9abede94325ccaf8d25531811f0c32422ba948d095beb6dee548a257bafb7cf718e6f4f501c128d6f65af3208f8f378015712a4f";
         String plain = RSA.reverseString( RSA.decryptHex(keyStore.getProvider(), jsPrivateKey, cipher_js) );
-        
+
         print("plain=" + plain);
         assertEquals(plain, "abc123!$%@");
 
@@ -235,7 +235,7 @@ public class AppTest extends TestCase {
         // hash is 256 chars length
         String hash = RSA.signHex(keyStore.getProvider(), jsPrivateKey, data);
         print("signHex=" + hash);
-        
+
         boolean ok = RSA.verifyHex(keyStore.getProvider(), jsPublicKey, data, hash);
         print("verifyHex=" + ok);
         assertTrue(ok);
@@ -247,7 +247,7 @@ public class AppTest extends TestCase {
 
         RSA.KeyStore keyStore = RSA.getKeyStoreSingleton();
         RSA.SecretKeyPair secretCert = keyStore.getSecretKeyPair();
-        
+
         Date from = new Date();
         Date to = new Date(from.getTime() + 365 * 86400 * 1000);
 

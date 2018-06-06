@@ -5,14 +5,14 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <description>pepstack-java-guru is a java bundle of utility classes.</description>
+    <description>java-code-guru is a java bundle of utilities using jdk1.8+ </description>
 
     <groupId>com.pepstack.guru</groupId>
-    <artifactId>pepstack-java-guru</artifactId>
-    <version>1.0.2-PRE</version>
+    <artifactId>java-code-guru</artifactId>
+    <version>1.1.2</version>
     <packaging>jar</packaging>
 
-    <name>pepstack-java-util</name>
+    <name>java-code-guru</name>
     <url>http://maven.apache.org</url>
 
     <properties>

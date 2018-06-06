@@ -26,7 +26,7 @@
  *
  * @create: 2014-12-29
  *
- * @update: 2018-06-06 17:30:56
+ * @update: 2018-06-06 18:33:31
  */
 package com.pepstack.crypto;
 
@@ -72,13 +72,14 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateEncodingException;
 
 import javax.crypto.Cipher;
-import javax.security.auth.x500.X500Principal;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 
 // http://www.bouncycastle.org/wiki/display/JA1/BC+Version+2+APIs
+// https://people.eecs.berkeley.edu/~jonah/bc/org/bouncycastle/jce/provider/BouncyCastleProvider.html
+import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import org.bouncycastle.operator.ContentSigner;
@@ -108,7 +109,7 @@ public final class RSA {
 
 
     // RSA max plain text block size (bytes) for encrypt
-    //	 1024 / 8 - 11 = 117
+    //   1024 / 8 - 11 = 117
     private static final int ENCRYPT_BLOCK = 117;
 
 
@@ -396,6 +397,12 @@ public final class RSA {
         private final KeyPair keyPair;
 
 
+        public SecretKeyPair(KeyPair pair) {
+            provider = new BouncyCastleProvider();
+            keyPair = pair;
+        }
+
+
         public SecretKeyPair(Provider bcProvider, KeyPairGenerator pairGenerator) {
             provider = bcProvider;
             keyPair = pairGenerator.generateKeyPair();
@@ -457,8 +464,6 @@ public final class RSA {
         //
         public X509Certificate generateX509Certificate(String issuerName, String subjectName, Date startDate, Date endDate) throws CertificateException {
             try {
-                java.security.Security.addProvider(new BouncyCastleProvider());
-
                 X500Name issuer = new X500Name(issuerName);
 
                 X500Name subject = new X500Name(subjectName);
@@ -481,6 +486,50 @@ public final class RSA {
                 throw ex;
             } catch (Exception e) {
                 throw new CertificateException(e);
+            }
+        }
+
+
+        // 保存密钥文件: 公钥和私钥一起保存
+        //
+        public static boolean saveSecretFile(File secretFile, KeyPair pair) {
+            FileOutputStream fos = null;
+            ObjectOutputStream oos = null;
+
+            try {
+                fos = FileUtils.openOutputStream(secretFile);
+                oos = new ObjectOutputStream(fos);
+                oos.writeObject(pair);
+
+                return true;
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            } finally {
+                finallyCloseStreamNoThrow(oos);
+                finallyCloseStreamNoThrow(fos);
+            }
+        }
+
+
+        // 加载密钥文件
+        //
+        public static SecretKeyPair loadSecretFile(File secretFile) {
+            FileInputStream fis = null;
+            ObjectInputStream ois = null;
+            try {
+                fis = FileUtils.openInputStream(secretFile);
+                ois = new ObjectInputStream(fis);
+
+                KeyPair keyPair = (KeyPair) ois.readObject();
+
+                SecretKeyPair secretPair = new SecretKeyPair(keyPair);
+
+                return secretPair;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                finallyCloseStreamNoThrow(ois);
+                finallyCloseStreamNoThrow(fis);
             }
         }
     }
@@ -510,6 +559,9 @@ public final class RSA {
         private KeyStore() {
             try {
                 provider = new BouncyCastleProvider();
+
+                // Add only once for a process
+                Security.addProvider(provider);
 
                 SecureRandom random = new SecureRandom();
                 random.setSeed(System.currentTimeMillis());
@@ -556,54 +608,8 @@ public final class RSA {
         }
 
 
-		public SecretKeyPair getSecretKeyPair() {
-			return secretCert;
-		}
-
-
-        /*
-        // save key store to file
-        private void saveKeyStore(File keyStoreFile) {
-            FileOutputStream fos = null;
-            ObjectOutputStream oos = null;
-            try {
-                fos = FileUtils.openOutputStream(keyStoreFile);
-                oos = new ObjectOutputStream(fos);
-                oos.writeObject(pair);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                throw new RuntimeException(ex);
-            } finally {
-                finallyCloseStreamNoThrow(oos);
-                finallyCloseStreamNoThrow(fos);
-            }
+        public SecretKeyPair getSecretKeyPair() {
+            return secretCert;
         }
-
-
-        // load key pair from key store file
-        private void loadKeyStore(File keyStoreFile) {
-            FileInputStream fis = null;
-            ObjectInputStream ois = null;
-            try {
-                fis = FileUtils.openInputStream(keyStoreFile);
-                ois = new ObjectInputStream(fis);
-
-                pair = (KeyPair) ois.readObject();
-
-                publicKey = (RSAPublicKey) pair.getPublic();
-                privateKey = (RSAPrivateKey) pair.getPrivate();
-
-                hexModulus = new String(Hex.encodeHex(publicKey.getModulus().toByteArray()));
-                hexPublicExponent = new String(Hex.encodeHex(publicKey.getPublicExponent().toByteArray()));
-                hexPrivateExponent = new String(Hex.encodeHex(privateKey.getPrivateExponent().toByteArray()));
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                throw new RuntimeException(ex);
-            } finally {
-                finallyCloseStreamNoThrow(ois);
-                finallyCloseStreamNoThrow(fis);
-            }
-        }
-        */
     }
 }

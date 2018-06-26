@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #-*- coding: UTF-8 -*-
-# repl.py
+# replace.py
 #
 #    replace strings in all source files
 #

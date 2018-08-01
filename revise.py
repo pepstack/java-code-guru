@@ -190,8 +190,11 @@ def main(parser):
 #   $ ./updt.py -P /path/to/file -F "java"
 #
 if __name__ == "__main__":
-    parser, group, optparse = util.use_parser_group(APPNAME, APPVER, APPHELP,
-        '%prog [Options]')
+    parser, group, optparse = util.use_parser_group(
+        appname=APPNAME,
+        appver=APPVER,
+        apphelp=APPHELP,
+        usage='%prog [Options]')
 
     group.add_option("-P", "--path",
         action="store", dest="path", type="string", default=None,

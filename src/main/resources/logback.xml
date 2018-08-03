@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="true" scan="true" scanPeriod="300 seconds">
+    <!-- reference:
+      https://blog.csdn.net/yingxiake/article/details/51274426
+      http://www.cnblogs.com/yin-jingyu/archive/2011/09/02/2163448.html
+      https://stackoverflow.com/questions/36875541/process-id-in-logback-logging-pattern
+    -->
+    <property resource="logback.properties" />
+
+    <timestamp key="timebyday" datePattern="yyyyMMdd"/>
+    <contextName>${timebyday}</contextName>
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <charset>UTF-8</charset>
+            <outputPatternAsHeader>true</outputPatternAsHeader>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{35}) - %msg %n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="rollfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 活动文件. 当前日志总是记录到活动文件. 活动文件的名字不会改变.
+          如果没设置 file, 活动文件的名字会根据 fileNamePattern 的值.
+            java-mbr_20180305.log
+        -->
+        <file>${log.path}/${log.name}_${timebyday}.log</file>
+
+        <append>true</append>
+
+        <!-- true: safely for multi-processes but slow. false: default -->
+        <prudent>false</prudent>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${log.path}/${log.name}_%d{yyyyMMdd}.log.%i</fileNamePattern>
+
+            <!-- 单个日志文件最大 100MB, 最多保存30天的日志, 最大不能超过 10GB -->
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>10GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder class="com.pepstack.guru.ExtendedPatternLayoutEncoder">
+            <charset>UTF-8</charset>
+            <outputPatternAsHeader>false</outputPatternAsHeader>
+            <pattern>%d{HH:mm:ss.SSS} [%thread:%process_id] %highlight(%-5level) %cyan(%logger{35}) - %msg %n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="debug">
+        <appender-ref ref="console" />
+        <appender-ref ref="rollfile" />
+    </root>
+
+    <logger name="com.pepstack.guru" level="debug" />
+    <logger name="com.pepstack.mbr" level="debug" />
+</configuration>

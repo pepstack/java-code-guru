@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #-*- coding: UTF-8 -*-
 #
-# @file: stat_report.py
+# @file: process_stat.py
 #    statistics and report in main app with child processes
 #
 # @author: ZhangLiang, 350137278@qq.com
@@ -9,49 +9,42 @@
 #
 # @create: 2018-06-25
 #
-# @update: 2018-07-23 18:44:39
+# @update: 2018-08-10 09:47:44
 #
 ########################################################################
 import os, time, inspect
 
-import multiprocessing
-from multiprocessing import Manager
-
 ########################################################################
-import utility as util
-import evntlog as elog
-
 # ! DO NOT CHANGE BELOW !
 logger_module_name, _ = os.path.splitext(os.path.basename(inspect.getfile(inspect.currentframe())))
 
 ########################################################################
 
-class StatReport(object):
+class ProcessStat(object):
+    ARROW_UP = '\033[32m↑\033[0m'
+    ARROW_DOWN = '\033[31m↓\033[0m'
+    ARROW_NONE = ' '
 
-    def __init__(self, report_title, interval_seconds):
-        self.lock = Manager().Lock()
+    def __init__(self, topic, manager):
+        self._lock = manager.Lock()
 
-        self.rows_dict = Manager().dict()
-
-        self.keys_dict = Manager().dict()
+        self.rows_dict = manager.dict()
+        self.keys_dict = manager.dict()
 
         self.start_time = time.time()
         self.curr_time = self.start_time
 
-        self._loop_counter = 0
-
-        self.report_title = report_title
-        self.interval_seconds = interval_seconds
+        self.topic = topic
         pass
 
 
-    def enter_lock(self):
-        self.lock.acquire()
+    def lock(self):
+        self._lock.acquire()
         pass
 
 
-    def leave_lock(self):
-        self.lock.release()
+    def unlock(self):
+        self._lock.release()
         pass
 
 
@@ -69,11 +62,11 @@ class StatReport(object):
         self.keys_dict[key] = newval
 
         if newval > oldval:
-            arrow = "↑"
+            arrow = ProcessStat.ARROW_UP
         elif newval < oldval:
-            arrow = "↓"
+            arrow = ProcessStat.ARROW_DOWN
         else:
-            arrow = " "
+            arrow = ProcessStat.ARROW_NONE
         return (arrow, oldval)
 
 
@@ -87,15 +80,3 @@ class StatReport(object):
         if d <= 0.0001:
             d = 0.001
         return d
-
-
-    def interval_report(self, callback_report):
-        self._loop_counter += 1
-
-        if self._loop_counter == self.interval_seconds:
-            self._loop_counter = 0
-
-            self.update_time()
-
-            callback_report(self)
-        pass

@@ -11,71 +11,140 @@
 #
 # @create: 2016-07-13
 #
-# @update: 2018-07-24 15:02:35
+# @update: 2018-08-10 12:30:58
 #
-# @version: 2018-07-24 15:02:35
+# @version: 2018-08-10 12:30:58
 #
 #######################################################################
-import os, signal, time, multiprocessing
+import os, sys, time, fileinput
+import utility as util
 
 #######################################################################
-# 全局变量
-global_exit_event = multiprocessing.Event()
 
+class AutoExitPid(object):
+    def __init__(self, pid, pname, pidfile, lock):
+        self.pid = pid
+        self.pname = pname
 
-class GracefulExitEvent(object):
-    @staticmethod
-    def onSigTerm(signum, frame):
-        global_exit_event.set()
+        self._lock = lock
+        self._pidfile = pidfile
+        self._pidstr = "{{%d}}" % pid
 
-    @staticmethod
-    def onSigChld(signo, frame):
-        pid, status = os.waitpid(-1, os.WNOHANG)
-        global_exit_event.set()
-
-    @staticmethod
-    def onSigInt(signo, frame):
-        global_exit_event.set()
-
-
-    def __init__(self):
-        self.workers = []
-
-        self.exit_event = global_exit_event
-
-        # Use signal handler to throw exception which can be caught
-        # by worker process to allow graceful exit.
-        signal.signal(signal.SIGTERM, GracefulExitEvent.onSigTerm)
-        signal.signal(signal.SIGCHLD, GracefulExitEvent.onSigChld)
-        signal.signal(signal.SIGINT, GracefulExitEvent.onSigInt)
+        with lock:
+            fd = open(pidfile, 'a')
+            with fd:
+                fd.write("{}=>{}\n".format(self._pidstr, pname))
         pass
 
 
-    def register_worker(self, wp):
-        self.workers.append(wp)
+    def __del__(self):
+        with self._lock:
+            for line in fileinput.input(self._pidfile, backup='.bak', inplace=True):
+                if line.startswith(self._pidstr):
+                    # 删除含有某一关键词的行
+                    pass
+                else:
+                    # 保留行
+                    print(line.rstrip())
+                pass
+        pass
+
+
+class GracefulExitEvent(object):
+
+    def __init__(self, lock, appfile):
+        self.glock = lock
+        self.workers = {}
+
+        self.stopfile = appfile + ".FORCESTOP"
+        self.pidfile = appfile + ".PID"
+
+        util.info("stopfile: {}".format(self.stopfile))
+        util.info("pidfile: {}".format(self.pidfile))
+
+        self.curtime = time.time()
+        pass
+
+
+    def register_worker(self, pname, wp):
+        # According to multiprocess daemon documentation by setting daemon=True
+        #  when your script ends its job will try to kill all subprocess.
+        # That occurs before they can start to write so no output will be produced.
+        wp.daemon = True
+
+        if self.workers.has_key(pname):
+            util.error("duplicated worker process name: %s", pname)
+            sys.exit(-1)
+
+        self.workers[pname] = wp
         pass
 
 
     def start_workers(self):
-        for wp in self.workers:
-            # According to multiprocess daemon documentation by setting daemon=True
-            #  when your script ends its job will try to kill all subprocess.
-            # That occurs before they can start to write so no output will be produced.
-            wp.daemon = False
-
-            wp.start()
+        for pname in self.workers.keys():
+            util.info("{}: worker starting...".format(pname))
+            self.workers[pname].start()
         pass
 
 
+    def update_time(self):
+        self.curtime = time.time()
+        return self.curtime
+
+
+    def acquire_pid(self):
+        pid, pname = util.pidname()
+        return (AutoExitPid(pid, pname, self.pidfile, self.glock), pid, pname)
+
+
     def is_stop(self):
-        return self.exit_event.is_set()
+        return util.file_exists(self.stopfile)
 
 
-    def notify_stop(self):
-        self.exit_event.set()
+    def lock(self):
+        self.glock.acquire()
 
 
-    def loop_forever(self, interval_seconds = 1, cb_interval_func = None, func_data = None):
+    def unlock(self):
+        self.glock.release()
+
+
+    def pid_status(self):
+        allrows = []
+        with self.glock:
+            fd = open(self.pidfile, 'r')
+            with fd:
+                allrows = fd.readlines()
+        return allrows
+
+
+    def check_forcestop(self, forcestop, exitCode = 0):
+        if forcestop:
+            self.notify_stop(exitCode)
+        else:
+            util.remove_file_nothrow(self.stopfile)
+        pass
+
+
+    def notify_stop(self, exitCode = 0):
+        try:
+            self.lock()
+            os.mknod(self.stopfile)
+        except:
+            util.except_print("notify_stop")
+        finally:
+            try:
+                self.unlock()
+            except:
+                util.except_print("unlock")
+                pass
+
+        if not exitCode is None:
+            sys.exit(exitCode)
+        pass
+
+
+    def forever(self, interval_seconds = 1, cb_interval_func = None, func_data = None):
         counter = 0
 
         interval = interval_seconds * 10
@@ -89,7 +158,15 @@ class GracefulExitEvent(object):
                 counter = 0
 
                 if cb_interval_func:
-                    cb_interval_func(func_data)
-
+                    try:
+                        cb_interval_func(func_data)
+                    except:
+                        util.except_print("cb_interval_func")
+                        pass
                 pass
+
+        # block wait child processes exit
+        for pname in self.workers.keys():
+            self.workers[pname].join()
+            util.warn("{}: worker stopped.".format(pname))
         pass

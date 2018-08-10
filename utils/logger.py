@@ -6,7 +6,7 @@
 #
 # @create: 2017-12-08
 #
-# @update: 2018-07-23 18:44:39
+# @update: 2018-08-10 09:47:44
 #
 ################################################################################
 
@@ -14,6 +14,12 @@ def set_logger(logger, log_path, log_level):
     import os, sys
     import utility as util
     import evntlog as elog
+
+    log_level = log_level.strip().upper()
+
+    if log_level not in ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR']:
+        util.error("log level(=%r) not one of: TRACE | DEBUG | INFO | WARN | ERROR" % log_level)
+        sys.exit(-1)
 
     # set logger:
     logpath = util.source_abspath(log_path)

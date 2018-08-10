@@ -20,22 +20,29 @@
 ***********************************************************************/
 /**
  * @file: LogUtil.java
- *
+ *    Wrapper for Logger
  *
  * @author: master@pepstack.com
  *
  * @create: 2018-05-04
  *
- * @update: 2018-06-15 11:51:14
+ * @update:
  */
 package com.pepstack.guru;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.StringWriter;
+import java.io.PrintWriter;
+import java.io.IOException;
+
 
 public class LogUtil {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    // purple
+    private final static String EXCEPTION_COLOR_FORMAT = "\033[31m%s:\033[0m \033[35m%s\033[0m";
 
     // purple
     private final static String FATAL_COLOR_FORMAT = "\033[35m%s\033[0m";
@@ -52,6 +59,7 @@ public class LogUtil {
     // cyan
     private final static String DEBUG_COLOR_FORMAT = "\033[36m%s\033[0m";
 
+
     public final void testLogging() {
         trace(logger, "This is a trace message!");
         debug(logger, "This is a debug message!");
@@ -62,27 +70,91 @@ public class LogUtil {
     }
 
 
-    public final static void fatal(Logger log, String msg) {
-        log.error(String.format(FATAL_COLOR_FORMAT, msg));
+    /**
+     * 完整的堆栈信息
+     *
+     * @param e Exception
+     * @return Full StackTrace
+     */
+    public static String getStackTrace(Exception e) {
+        String msg = "";
+
+        StringWriter sw = null;
+        PrintWriter pw = null;
+
+        try {
+            sw = new StringWriter();
+            pw = new PrintWriter(sw);
+
+            e.printStackTrace(pw);
+
+            pw.flush();
+            sw.flush();
+
+            msg = sw.toString();
+        } finally {
+            if (sw != null) {
+                try {
+                    sw.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            if (pw != null) {
+                pw.close();
+            }
+        }
+
+        return msg;
     }
 
-    public final static void error(Logger log, String msg) {
-        log.error(String.format(ERROR_COLOR_FORMAT, msg));
+
+    public final static void exception(Logger log, Exception e) {
+        if (log.isErrorEnabled()) {
+            log.error(String.format(EXCEPTION_COLOR_FORMAT, e.getClass().getCanonicalName(), e.getStackTrace()));
+        }
     }
 
-    public final static void warn(Logger log, String msg) {
-        log.warn(String.format(WARN_COLOR_FORMAT, msg));
+
+    public final static void fatal(Logger log, String fmt, String... args) {
+        if (log.isErrorEnabled()) {
+            log.error(String.format(FATAL_COLOR_FORMAT, String.format(fmt, args)));
+        }
     }
 
-    public final static void info(Logger log, String msg) {
-        log.info(String.format(INFO_COLOR_FORMAT, msg));
+
+    public final static void error(Logger log, String fmt, String... args) {
+        if (log.isErrorEnabled()) {
+            log.error(String.format(ERROR_COLOR_FORMAT, String.format(fmt, args)));
+        }
     }
 
-    public final static void debug(Logger log, String msg) {
-        log.debug(String.format(DEBUG_COLOR_FORMAT, msg));
+
+    public final static void warn(Logger log, String fmt, String... args) {
+        if (log.isWarnEnabled()) {
+            log.warn(String.format(WARN_COLOR_FORMAT, String.format(fmt, args)));
+        }
     }
 
-    public final static void trace(Logger log, String msg) {
-        log.trace(msg);
+
+    public final static void info(Logger log, String fmt, String... args) {
+        if (log.isInfoEnabled()) {
+            log.info(String.format(INFO_COLOR_FORMAT, String.format(fmt, args)));
+        }
+    }
+
+
+    public final static void debug(Logger log, String fmt, String... args) {
+        if (log.isDebugEnabled()) {
+            log.debug(String.format(DEBUG_COLOR_FORMAT, String.format(fmt, args)));
+        }
+    }
+
+
+    public final static void trace(Logger log, String fmt, String... args) {
+        if (log.isTraceEnabled()) {
+            log.trace(fmt, args);
+        }
     }
 }

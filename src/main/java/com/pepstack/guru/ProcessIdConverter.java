@@ -27,7 +27,7 @@
  *
  * @create: 2018-08-03
  *
- * @update:
+ * @update: 2018-08-03 15:30:52
  */
 package com.pepstack.guru;
 
@@ -39,7 +39,9 @@ import java.lang.management.ManagementFactory;
 
 
 public class ProcessIdConverter extends ClassicConverter {
-    private static final String process_id = ManagementFactory.getRuntimeMXBean().getName();
+    private static final String process_name = ManagementFactory.getRuntimeMXBean().getName();
+
+    private static final String process_id = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 
     @Override
     public String convert(final ILoggingEvent event) {

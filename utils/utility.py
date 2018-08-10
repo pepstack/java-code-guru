@@ -6,7 +6,7 @@
 #
 # @create: 2015-12-02
 #
-# @update: 2018-07-25 11:00:12
+# @update: 2018-08-10 11:39:15
 #
 #######################################################################
 import os, errno, sys, shutil, inspect, select, commands
@@ -23,10 +23,15 @@ from datetime import datetime, timedelta
 import optparse, ConfigParser
 
 
-exit_event = threading.Event()
-
 reload(sys)
 sys.setdefaultencoding('utf-8')
+
+#######################################################################
+
+# 当前进程 pid, pname
+def pidname():
+    import multiprocessing
+    return (os.getpid(), multiprocessing.current_process().name)
 
 
 def check_import_module(module_name):
@@ -52,6 +57,14 @@ def info2(s):
 
 def warn(s):
     print '\033[33m[WARNING] %s\033[0m' % s
+
+def except_print(s = None):
+    (errtype, errmsg, traceback) = sys.exc_info()
+    if s:
+        error("({}) {}: {}".format(s, errtype, errmsg))
+    else:
+        error("{}: {}".format(s, errtype, errmsg))
+
 
 #######################################################################
 # returns current datetime as string
@@ -432,8 +445,8 @@ def write_first_line_nothrow(fname, line):
         return ret
 
 
-def relay_read_messages(pathfile, posfile, stopfile, chunk_size = 65536, read_maxsize = 16777216):
-    infd, messages, last_position = None, [], 0
+def relay_read_messages(pathfile, posfile, stopfile, chunk_size=65536, read_maxsize=16777216, message_separator='\n'):
+    infd, messages, last_position, position = (None, [], 0, 0)
 
     if not file_exists(posfile):
         os.mknod(posfile)
@@ -441,11 +454,10 @@ def relay_read_messages(pathfile, posfile, stopfile, chunk_size = 65536, read_ma
 
     if file_exists(posfile):
         last_position = int(read_first_line_nothrow(posfile))
+        position = last_position
 
     try:
         infd = open(pathfile, 'rb')
-
-        position = last_position
 
         while position - last_position < read_maxsize:
 
@@ -464,12 +476,12 @@ def relay_read_messages(pathfile, posfile, stopfile, chunk_size = 65536, read_ma
 
                 for i in xrange(cbsize):
                     end = end + 1
-                    if chunk[i] == '\n':
+                    if chunk[i] == message_separator:
                         line = chunk[start : end]
                         position = position + end - start
                         start = end
 
-                        msg = line.strip(" \r\n")
+                        msg = line.strip(" \r\n").strip(message_separator)
                         if msg and len(msg):
                             messages.append(msg)
 
@@ -483,7 +495,7 @@ def relay_read_messages(pathfile, posfile, stopfile, chunk_size = 65536, read_ma
         close_file_nothrow(infd)
         pass
 
-    return (messages, last_position)
+    return (messages, last_position, position)
 
 
 def write_file(fd, encoding, format, *arg):

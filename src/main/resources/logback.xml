@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration debug="true" scan="true" scanPeriod="300 seconds">
+<configuration debug="false" scan="true" scanPeriod="300 seconds">
     <!-- reference:
       https://blog.csdn.net/yingxiake/article/details/51274426
       http://www.cnblogs.com/yin-jingyu/archive/2011/09/02/2163448.html
       https://stackoverflow.com/questions/36875541/process-id-in-logback-logging-pattern
+      https://logback.qos.ch/manual/layouts.html#coloring
     -->
     <property resource="logback.properties" />
 
     <timestamp key="timebyday" datePattern="yyyyMMdd"/>
-    <contextName>${timebyday}</contextName>
 
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <charset>UTF-8</charset>
             <outputPatternAsHeader>true</outputPatternAsHeader>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{35}) - %msg %n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{35}::%M\(%F:%L\)): %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -28,7 +28,7 @@
         <append>true</append>
 
         <!-- true: safely for multi-processes but slow. false: default -->
-        <prudent>false</prudent>
+        <prudent>true</prudent>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>${log.path}/${log.name}_%d{yyyyMMdd}.log.%i</fileNamePattern>
@@ -42,7 +42,7 @@
         <encoder class="com.pepstack.guru.ExtendedPatternLayoutEncoder">
             <charset>UTF-8</charset>
             <outputPatternAsHeader>false</outputPatternAsHeader>
-            <pattern>%d{HH:mm:ss.SSS} [%thread:%process_id] %highlight(%-5level) %cyan(%logger{35}) - %msg %n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread:%process_id] %highlight(%-5level) %cyan(%logger{35}::%M\(%F:%L\)): %msg%n</pattern>
         </encoder>
     </appender>
 

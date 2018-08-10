@@ -19,28 +19,34 @@
 * 3. This notice may not be removed or altered from any source distribution.
 ***********************************************************************/
 /**
- * @file: ExtendedPatternLayoutEncoder.java
+ * @file: ShutdownHook.java
  *
- *   https://stackoverflow.com/questions/36875541/process-id-in-logback-logging-pattern
  *
  * @author: master@pepstack.com
  *
- * @create: 2018-08-03
+ * @create: 2018-05-04
  *
- * @update: 2018-08-03 14:49:15
+ * @update: 2018-08-03 15:36:20
  */
 package com.pepstack.guru;
 
-import ch.qos.logback.classic.PatternLayout;
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 
+public class ShutdownHook implements Runnable {
 
-public class ExtendedPatternLayoutEncoder extends PatternLayoutEncoder {
-    @Override
-    public void start() {
-        // put your converter
-        PatternLayout.defaultConverterMap.put("process_id", ProcessIdConverter.class.getName());
+    public ShutdownHook() {
+        // register a shutdown hook for this class.
+        // a shutdown hook is an initialzed but not started thread, which will get up and run
+        // when the JVM is about to exit. this is used for short clean up tasks.
+        Runtime.getRuntime().addShutdownHook(new Thread(this));
+    }
 
-        super.start();
+    // this method will be executed of course, since it's a Runnable.
+    // tasks should not be light and short, accessing database is alright though.
+    public void run() {
+        cleanUp();
+    }
+
+    // (-: a very simple task to execute
+    public void cleanUp() {
     }
 }

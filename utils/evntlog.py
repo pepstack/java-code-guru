@@ -196,6 +196,14 @@ def fatal(format = None, *arg):
         logger.critical(msg)
 
 
+def except_error(msg):
+    (errtype, errmsg, traceback) = sys.exc_info()
+    if msg:
+        error("({}) {}: {}".format(msg, errtype, errmsg))
+    else:
+        error("{}: {}".format(msg, errtype, errmsg))
+
+
 #######################################################################
 # init logger
 

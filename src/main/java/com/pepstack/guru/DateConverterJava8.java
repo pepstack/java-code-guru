@@ -19,14 +19,14 @@
 * 3. This notice may not be removed or altered from any source distribution.
 ***********************************************************************/
 /**
- * @file: DateConverter.java
+ * @file: DateConverterJava8.java
  *
  *
  * @author: master@pepstack.com
  *
  * @create: 2018-05-04
  *
- * @update: 2018-06-15 11:51:14
+ * @update: 2018-08-01 18:08:33
  */
 package com.pepstack.guru;
 
@@ -47,7 +47,22 @@ import java.time.format.DateTimeFormatter;
  *
  * https://stackoverflow.com/questions/21242110/convert-java-util-date-to-java-time-localdate
  */
-public class DateConverter {
+public class DateConverterJava8 {
+    public final static String DATE_FORMAT = "yyyy-MM-dd";
+    public final static String MYSQL_DATE_FORMAT = "%Y-%m-%d";
+    public final static String INVALID_DATE = "0000-00-00";
+
+    public final static String TIME_FORMAT = "HH:mm:ss";
+    public final static String MYSQL_TIME_FORMAT = "%H:%i:%S";
+    public final static String INVALID_TIME = "00:00:00";
+    
+    public final static String DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    public final static String MYSQL_DATETIME_FORMAT = "%Y-%m-%d %H:%i:%S";
+    public final static String INVALID_DATETIME = "0000-00-00 00:00:00";
+
+    public final static String TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
+    public final static String MYSQL_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%i:%S";
+    public final static String INVALID_TIMESTAMP = "0000-00-00 00:00:00.000";
 
     /**
      * Calls {@link #asLocalDate(Date, ZoneId)} with the system default time zone.
@@ -60,13 +75,15 @@ public class DateConverter {
      * Creates {@link LocalDate} from {@code java.util.Date} or it's subclasses. Null-safe.
      */
     public static LocalDate asLocalDate(java.util.Date date, ZoneId zone) {
-        if (date == null)
+        if (date == null) {
             return null;
+        }
 
-        if (date instanceof java.sql.Date)
+        if (date instanceof java.sql.Date) {
             return ((java.sql.Date) date).toLocalDate();
-        else
+        } else {
             return Instant.ofEpochMilli(date.getTime()).atZone(zone).toLocalDate();
+        }
     }
 
     /**
@@ -80,13 +97,15 @@ public class DateConverter {
      * Creates {@link LocalDateTime} from {@code java.util.Date} or it's subclasses. Null-safe.
      */
     public static LocalDateTime asLocalDateTime(java.util.Date date, ZoneId zone) {
-        if (date == null)
+        if (date == null) {
             return null;
+        }
 
-        if (date instanceof java.sql.Timestamp)
+        if (date instanceof java.sql.Timestamp) {
             return ((java.sql.Timestamp) date).toLocalDateTime();
-        else
+        } else {
             return Instant.ofEpochMilli(date.getTime()).atZone(zone).toLocalDateTime();
+        }
     }
 
     /**
@@ -152,9 +171,10 @@ public class DateConverter {
      * Creates {@link ZonedDateTime} from {@code java.util.Date} or it's subclasses. Null-safe.
      */
     public static ZonedDateTime asZonedDateTime(java.util.Date date, ZoneId zone) {
-        if (date == null)
+        if (date == null) {
             return null;
-        else
+        } else {
             return asInstant(date).atZone(zone);
+        }
     }
 }

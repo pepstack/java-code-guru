@@ -6,7 +6,7 @@
 #
 # @create: 2015-12-02
 #
-# @update: 2018-08-10 11:39:15
+# @update: 2018-08-10 16:15:47
 #
 #######################################################################
 import os, errno, sys, shutil, inspect, select, commands
@@ -28,24 +28,6 @@ sys.setdefaultencoding('utf-8')
 
 #######################################################################
 
-# 当前进程 pid, pname
-def pidname():
-    import multiprocessing
-    return (os.getpid(), multiprocessing.current_process().name)
-
-
-def check_import_module(module_name):
-    import importlib
-    try:
-        module = importlib.import_module(module_name)
-        return module
-    except ImportError as ie:
-        error("ImportError: {}.".format(str(ie)))
-        sys.exit(-1)
-
-
-#######################################################################
-
 def error(s):
     print '\033[31m[ERROR] %s\033[0m' % s
 
@@ -64,6 +46,36 @@ def except_print(s = None):
         error("({}) {}: {}".format(s, errtype, errmsg))
     else:
         error("{}: {}".format(s, errtype, errmsg))
+
+#######################################################################
+
+# 当前进程 pid, pname
+def pidname():
+    import multiprocessing
+    return (os.getpid(), multiprocessing.current_process().name)
+
+
+def check_import_module(module_name):
+    import importlib
+    try:
+        module = importlib.import_module(module_name)
+        return module
+    except ImportError as ie:
+        error("ImportError: {}.".format(str(ie)))
+        sys.exit(-1)
+
+
+def check_start_daemon(appName, daemon):
+    if daemon:
+        cmdargs = filter(lambda x: x != '--daemon', sys.argv[1:])
+        startcmd = "nohup {prog:} {cmdline:} > /dev/null 2>&1 &".format(prog=sys.argv[0], cmdline=' '.join(cmdargs))
+        info("startcmd=[{}]".format(startcmd))
+        ret = os.system(startcmd)
+        if ret == 0:
+            info2("{} start daemon succeeded.".format(appName))
+        else:
+            error("{} start daemon failed.".format(appName))
+        sys.exit(ret)
 
 
 #######################################################################

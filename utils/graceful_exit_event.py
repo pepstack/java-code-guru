@@ -11,9 +11,9 @@
 #
 # @create: 2016-07-13
 #
-# @update: 2018-08-10 12:30:58
+# @update: 2018-08-10 16:09:10
 #
-# @version: 2018-08-10 12:30:58
+# @version: 2018-08-10 16:09:10
 #
 #######################################################################
 import os, sys, time, fileinput
@@ -81,6 +81,11 @@ class GracefulExitEvent(object):
 
 
     def start_workers(self):
+        with self.glock:
+            if util.file_exists(self.pidfile):
+                util.error("pidfile already exists: " + self.pidfile)
+                sys.exit(-1)
+
         for pname in self.workers.keys():
             util.info("{}: worker starting...".format(pname))
             self.workers[pname].start()
@@ -112,9 +117,10 @@ class GracefulExitEvent(object):
     def pid_status(self):
         allrows = []
         with self.glock:
-            fd = open(self.pidfile, 'r')
-            with fd:
-                allrows = fd.readlines()
+            if util.file_exists(self.pidfile):
+                fd = open(self.pidfile, 'r')
+                with fd:
+                    allrows = fd.readlines()
         return allrows
 
 
@@ -129,7 +135,11 @@ class GracefulExitEvent(object):
     def notify_stop(self, exitCode = 0):
         try:
             self.lock()
-            os.mknod(self.stopfile)
+
+            if not util.file_exists(self.stopfile):
+                os.mknod(self.stopfile)
+            else:
+                util.warn("stopfile already exists: " + self.stopfile)
         except:
             util.except_print("notify_stop")
         finally:
@@ -169,4 +179,8 @@ class GracefulExitEvent(object):
         for pname in self.workers.keys():
             self.workers[pname].join()
             util.warn("{}: worker stopped.".format(pname))
+
+        with self.glock:
+            util.remove_file_nothrow(self.pidfile)
+            util.remove_file_nothrow(self.stopfile)
         pass
